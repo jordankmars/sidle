@@ -88,6 +88,8 @@ export function createRowController(): RowController {
 	let direction: Direction = "ltr";
 	let swiped = false;
 	let reducedMotion = false;
+	/** The commit action picked by tap or shortcut. A full swipe leaves it empty. */
+	let chosenCommit: ActionEntry | undefined;
 
 	/** The action a full swipe on this side commits. */
 	function mainAction(side: Side): ActionEntry | undefined {
@@ -101,6 +103,7 @@ export function createRowController(): RowController {
 	function activate(panel: PanelEntry, action: ActionEntry) {
 		if (!machine) return;
 		if (action.commit) {
+			chosenCommit = action;
 			machine.commit(panel.side);
 			return;
 		}
@@ -188,6 +191,8 @@ export function createRowController(): RowController {
 				reducedMotion,
 				edgeGuard,
 				onCommit(side) {
+					const action = chosenCommit ?? mainAction(side);
+					chosenCommit = undefined;
 					const done = () => {
 						// Removing the row would drop focus on the floor, so pass it along.
 						if (!disposing && row.contains(document.activeElement)) {
@@ -196,7 +201,7 @@ export function createRowController(): RowController {
 								?.querySelector<HTMLElement>("[data-sidle-content]")
 								?.focus();
 						}
-						mainAction(side)?.select();
+						action?.select();
 					};
 					// Already on its way out of the page, so there's nothing to animate.
 					if (disposing) done();

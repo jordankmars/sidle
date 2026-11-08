@@ -160,6 +160,45 @@ describe("Actions and Action", () => {
 		expect(remove).toHaveBeenCalledOnce();
 	});
 
+	describe("with two commit actions on a side", () => {
+		function setupTwoCommits() {
+			const archive = vi.fn();
+			const remove = vi.fn();
+			render(
+				<Row>
+					<Content data-testid="content">Hello</Content>
+					<Actions side="end">
+						<Action onSelect={archive} commit>
+							Archive
+						</Action>
+						<Action onSelect={remove} commit>
+							Delete
+						</Action>
+					</Actions>
+				</Row>,
+			);
+			return { archive, remove };
+		}
+
+		it("runs the one that was tapped", () => {
+			const { archive, remove } = setupTwoCommits();
+			swipe(content(), 250, 170);
+			fireEvent.click(button("Archive"));
+			flushFrames();
+			finishCollapse();
+			expect(archive).toHaveBeenCalledOnce();
+			expect(remove).not.toHaveBeenCalled();
+		});
+
+		it("runs the last one on a full swipe", () => {
+			const { archive, remove } = setupTwoCommits();
+			swipe(content(), 280, 60);
+			finishCollapse();
+			expect(remove).toHaveBeenCalledOnce();
+			expect(archive).not.toHaveBeenCalled();
+		});
+	});
+
 	it("uses the latest onSelect", () => {
 		const first = vi.fn();
 		const second = vi.fn();
