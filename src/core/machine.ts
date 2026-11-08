@@ -80,7 +80,11 @@ export interface SwipeMachineOptions {
 export interface SwipeMachine {
 	down(point: Point): void;
 	move(point: Point): void;
-	up(point: Point): void;
+	/**
+	 * Returns true if the swipe used this release: it ended a drag or closed the
+	 * row. Skip the click the browser sends next, or the row activates as well.
+	 */
+	up(point: Point): boolean;
 	/** The pointer was taken away (pointercancel). Return to where the row was. */
 	cancel(): void;
 	/** Advance animations by `dt` seconds. */
@@ -275,15 +279,18 @@ export function createSwipeMachine(
 		},
 
 		up(point) {
-			if (!gesture || point.id !== gesture.id) return;
+			if (!gesture || point.id !== gesture.id) return false;
 			const wasDrag = gesture.axis === "x";
 			gesture = null;
 
 			if (!wasDrag) {
 				// A tap on an open row closes it.
-				if (spring.to !== 0 || spring.x !== 0) settle(0, null);
-				else emit({ phase: animating ? "settling" : "idle" });
-				return;
+				if (spring.to !== 0 || spring.x !== 0) {
+					settle(0, null);
+					return true;
+				}
+				emit({ phase: animating ? "settling" : "idle" });
+				return false;
 			}
 
 			const velocity = tracker.velocity();
@@ -303,6 +310,7 @@ export function createSwipeMachine(
 				if (config)
 					settle(offsetFor(release.side, config.width), release.side, velocity);
 			}
+			return true;
 		},
 
 		cancel() {

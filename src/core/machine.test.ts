@@ -223,6 +223,50 @@ describe("createSwipeMachine", () => {
 		});
 	});
 
+	describe("what up returns", () => {
+		const at = { x: 200, y: 100, time: 0 };
+
+		it("is true after a drag", () => {
+			const m = setup();
+			drag(m, -100);
+			expect(m.up({ x: 100, y: 100, time: 300 })).toBe(true);
+		});
+
+		it("is true when a tap closes an open row", () => {
+			const m = setup();
+			release(m, -120);
+			settle(m);
+			m.down(at);
+			expect(m.up(at)).toBe(true);
+		});
+
+		it("is false for a tap on a closed row", () => {
+			const m = setup();
+			m.down(at);
+			expect(m.up(at)).toBe(false);
+		});
+
+		it("is false once a vertical drag has been abandoned", () => {
+			const m = setup();
+			m.down(at);
+			m.move({ x: 200, y: 160, time: 50 });
+			expect(m.up({ x: 200, y: 160, time: 100 })).toBe(false);
+		});
+
+		it("is false for a pointer the edge guard ignored", () => {
+			const m = setup({ edgeGuard: 24 });
+			const edge = { x: 10, y: 100, time: 0 };
+			m.down(edge);
+			expect(m.up(edge)).toBe(false);
+		});
+
+		it("is false for a pointer that isn't driving the gesture", () => {
+			const m = setup();
+			m.down({ ...at, id: 1 });
+			expect(m.up({ ...at, id: 2 })).toBe(false);
+		});
+	});
+
 	describe("edge guard", () => {
 		it("ignores drags that start at the leading screen edge", () => {
 			const m = createSwipeMachine({ edgeGuard: 24 });
