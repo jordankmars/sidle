@@ -44,6 +44,11 @@ export interface SwipeState {
 	armedSide: Side | null;
 }
 
+/** The part of a row's state worth keeping while it is unmounted. */
+export interface SwipeSnapshot {
+	openSide: Side | null;
+}
+
 export interface SwipeLayout {
 	/** Width of the row in px. */
 	rowWidth: number;
@@ -64,6 +69,8 @@ export interface SwipeMachineOptions {
 	 * the iOS swipe-back gesture wins. Off by default.
 	 */
 	edgeGuard?: number;
+	/** Start open, e.g. when a virtualized row scrolls back into view. */
+	initial?: SwipeSnapshot;
 	/** Called once the row has finished sliding off-screen. */
 	onCommit?: (side: Side) => void;
 }
@@ -85,6 +92,15 @@ export interface SwipeMachine {
 	subscribe(listener: (state: SwipeState) => void): () => void;
 	/** True while the row is animating and wants `tick` called every frame. */
 	readonly needsFrame: boolean;
+	/** What to hand to `restore` (or `initial`) if this row is recreated later. */
+	snapshot(): SwipeSnapshot;
+	/** Jump to a snapshot without animating. Ignored mid-drag or once committed. */
+	restore(snapshot: SwipeSnapshot): void;
+	/**
+	 * Finish up before the row goes away: a commit in flight lands (and fires
+	 * `onCommit`), a drag snaps back, and the machine stops responding.
+	 */
+	destroy(): void;
 }
 
 export const DEFAULT_SPRING: SpringConfig = {
@@ -118,6 +134,7 @@ export function createSwipeMachine(
 	let animating = false;
 	let gesture: Gesture | null = null;
 	let committedSide: Side | null = null;
+	let destroyed = false;
 	let state: SwipeState = {
 		phase: "idle",
 		offset: 0,
@@ -168,6 +185,15 @@ export function createSwipeMachine(
 		emit({ phase: gesture ? "pending" : moving, openSide, armedSide: armed });
 	}
 
+	function restore({ openSide }: SwipeSnapshot) {
+		if (committedSide || gesture) return;
+		const config = openSide ? layout[openSide] : undefined;
+		const to = openSide && config ? offsetFor(openSide, config.width) : 0;
+		spring = createSpring(to);
+		// Keep the side even before the first layout; setLayout pins it into place.
+		arrive({ openSide, armedSide: null });
+	}
+
 	function commit(side: Side, velocity?: number) {
 		if (!layout[side]?.commit || committedSide) return;
 		committedSide = side;
@@ -190,9 +216,11 @@ export function createSwipeMachine(
 		return Math.sign(raw) * (max + rubber(distance - max, OVERSCROLL));
 	}
 
+	if (options.initial) restore(options.initial);
+
 	return {
 		down(point) {
-			if (committedSide) return;
+			if (committedSide || destroyed) return;
 			const edge = {
 				size: options.edgeGuard ?? 0,
 				viewportWidth: layout.viewportWidth,
@@ -290,17 +318,19 @@ export function createSwipeMachine(
 
 		open(side) {
 			const config = layout[side];
-			if (!config || committedSide || gesture?.axis === "x") return;
+			if (!config || committedSide || destroyed || gesture?.axis === "x") {
+				return;
+			}
 			settle(offsetFor(side, config.width), side);
 		},
 
 		close() {
-			if (committedSide || gesture?.axis === "x") return;
+			if (committedSide || destroyed || gesture?.axis === "x") return;
 			settle(0, null);
 		},
 
 		commit(side) {
-			commit(side);
+			if (!destroyed) commit(side);
 		},
 
 		setLayout(next) {
@@ -312,6 +342,25 @@ export function createSwipeMachine(
 				spring = createSpring(to);
 				emit({ offset: to, openSide: config ? state.openSide : null });
 			}
+		},
+
+		snapshot() {
+			return { openSide: committedSide ? null : state.openSide };
+		},
+
+		restore(snapshot) {
+			if (!destroyed) restore(snapshot);
+		},
+
+		destroy() {
+			if (destroyed) return;
+			gesture = null;
+			if (animating || spring.x !== spring.to) {
+				spring = createSpring(spring.to);
+				arrive();
+			}
+			destroyed = true;
+			listeners.clear();
 		},
 
 		getState: () => state,

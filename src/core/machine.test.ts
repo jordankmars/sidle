@@ -296,4 +296,80 @@ describe("createSwipeMachine", () => {
 			expect(commits).toEqual(["end"]);
 		});
 	});
+
+	describe("snapshot and restore", () => {
+		it("snapshots the side the row is open to", () => {
+			const m = setup();
+			expect(m.snapshot()).toEqual({ openSide: null });
+			m.open("end");
+			expect(m.snapshot()).toEqual({ openSide: "end" });
+		});
+
+		it("starts open from an initial snapshot once laid out", () => {
+			const m = createSwipeMachine({ initial: { openSide: "start" } });
+			m.setLayout(layout);
+			expect(m.needsFrame).toBe(false);
+			expect(m.getState()).toMatchObject({
+				phase: "idle",
+				offset: 90,
+				openSide: "start",
+			});
+		});
+
+		it("restores without animating", () => {
+			const m = setup();
+			m.restore({ openSide: "end" });
+			expect(m.needsFrame).toBe(false);
+			expect(m.getState().offset).toBe(-150);
+		});
+
+		it("does not snapshot a committed row as open", () => {
+			const m = createSwipeMachine({ reducedMotion: true });
+			m.setLayout(committable);
+			m.commit("end");
+			expect(m.snapshot()).toEqual({ openSide: null });
+		});
+	});
+
+	describe("destroy", () => {
+		it("lands a commit that is still in flight", () => {
+			const commits: string[] = [];
+			const m = createSwipeMachine({ onCommit: (side) => commits.push(side) });
+			m.setLayout(committable);
+			m.commit("end");
+			m.tick(1 / 60);
+			m.destroy();
+			expect(commits).toEqual(["end"]);
+			expect(m.getState().phase).toBe("committed");
+		});
+
+		it("drops a drag back to where the row was", () => {
+			const m = setup();
+			m.open("end");
+			settle(m);
+			drag(m, 100);
+			m.destroy();
+			expect(m.snapshot()).toEqual({ openSide: "end" });
+			expect(m.getState()).toMatchObject({ phase: "idle", offset: -150 });
+		});
+
+		it("finishes an open that is still animating", () => {
+			const m = setup();
+			m.open("start");
+			m.destroy();
+			expect(m.getState()).toMatchObject({ offset: 90, openSide: "start" });
+		});
+
+		it("ignores everything afterwards", () => {
+			const m = setup();
+			const seen: unknown[] = [];
+			m.subscribe((s) => seen.push(s));
+			m.destroy();
+			m.open("end");
+			drag(m, -100);
+			m.commit("end");
+			expect(seen).toEqual([]);
+			expect(m.getState().offset).toBe(0);
+		});
+	});
 });

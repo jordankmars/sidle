@@ -11,6 +11,7 @@ export type {
 	SwipeLayout,
 	SwipeMachine,
 	SwipeMachineOptions,
+	SwipeSnapshot,
 	SwipeState,
 } from "./machine";
 export { createSwipeMachine, DEFAULT_SPRING } from "./machine";
