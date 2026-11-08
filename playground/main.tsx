@@ -84,12 +84,14 @@ function Row({
 	dir,
 	onFlag,
 	onRemove,
+	onOpen,
 }: {
 	mail: Mail;
 	group: SwipeGroup;
 	dir: Direction;
 	onFlag: () => void;
 	onRemove: () => void;
+	onOpen: () => void;
 }) {
 	const rowRef = useRef<HTMLDivElement>(null);
 	const bodyRef = useRef<HTMLElement>(null);
@@ -97,6 +99,7 @@ function Row({
 	const endRef = useRef<HTMLDivElement>(null);
 	const machineRef = useRef<SwipeMachine | null>(null);
 	const measureRef = useRef<() => void>(null);
+	const swipedRef = useRef(false);
 	const onRemoveRef = useRef(onRemove);
 	onRemoveRef.current = onRemove;
 	const dirRef = useRef(dir);
@@ -204,6 +207,11 @@ function Row({
 		}
 	}
 
+	function onClick() {
+		// The click that follows a swipe isn't a tap on the row.
+		if (!swipedRef.current) onOpen();
+	}
+
 	function onKeyDown(e: KeyboardEvent) {
 		const m = machine();
 		if (!m) return;
@@ -213,6 +221,7 @@ function Row({
 		}
 		if (e.key === "e") m.commit("start");
 		if (e.key === "f") flag();
+		if (e.key === "Enter") onOpen();
 	}
 
 	return (
@@ -253,8 +262,11 @@ function Row({
 				aria-label={`${mail.from}: ${mail.text}. Delete to remove, E to archive, F to flag.`}
 				onPointerDown={onPointerDown}
 				onPointerMove={onPointerMove}
-				onPointerUp={(e) => machine()?.up(toPoint(e))}
+				onPointerUp={(e) => {
+					swipedRef.current = machine()?.up(toPoint(e)) ?? false;
+				}}
 				onPointerCancel={() => machine()?.cancel()}
+				onClick={onClick}
 				onKeyDown={onKeyDown}
 			>
 				<b>
@@ -293,7 +305,13 @@ function useSwipeGroup(listRef: RefObject<HTMLElement | null>) {
 	return group;
 }
 
-function Inbox({ dir }: { dir: Direction }) {
+function Inbox({
+	dir,
+	onOpen,
+}: {
+	dir: Direction;
+	onOpen: (from: string) => void;
+}) {
 	const { mails, remove, toggleFlag } = useMailList(INBOX);
 	const listRef = useRef<HTMLDivElement>(null);
 	const group = useSwipeGroup(listRef);
@@ -308,6 +326,7 @@ function Inbox({ dir }: { dir: Direction }) {
 					dir={dir}
 					onFlag={() => toggleFlag(mail.id)}
 					onRemove={() => remove(mail.id)}
+					onOpen={() => onOpen(mail.from)}
 				/>
 			))}
 		</div>
@@ -321,7 +340,13 @@ const OVERSCAN = 3;
  * A hand-rolled windowed list: only the rows in view are mounted. Open a row,
  * scroll it away and back, and it should still be open.
  */
-function WindowedList({ dir }: { dir: Direction }) {
+function WindowedList({
+	dir,
+	onOpen,
+}: {
+	dir: Direction;
+	onOpen: (from: string) => void;
+}) {
 	const { mails, remove, toggleFlag } = useMailList(MANY);
 	const listRef = useRef<HTMLDivElement>(null);
 	const group = useSwipeGroup(listRef);
@@ -357,6 +382,7 @@ function WindowedList({ dir }: { dir: Direction }) {
 					dir={dir}
 					onFlag={() => toggleFlag(mail.id)}
 					onRemove={() => remove(mail.id)}
+					onOpen={() => onOpen(mail.from)}
 				/>
 			))}
 			<div style={{ height: (mails.length - last) * ROW_HEIGHT }} />
@@ -367,6 +393,7 @@ function WindowedList({ dir }: { dir: Direction }) {
 function App() {
 	const [inbox, setInbox] = useState(0);
 	const [dir, setDir] = useState<Direction>("ltr");
+	const [opened, setOpened] = useState<string | null>(null);
 	return (
 		<main>
 			<style>{CSS}</style>
@@ -378,7 +405,7 @@ function App() {
 				</p>
 			</header>
 			<section className="stage" dir={dir}>
-				<Inbox key={inbox} dir={dir} />
+				<Inbox key={inbox} dir={dir} onOpen={setOpened} />
 			</section>
 			<footer>
 				<button
@@ -396,6 +423,9 @@ function App() {
 				>
 					{dir === "ltr" ? "Left to right" : "Right to left"}
 				</button>
+				<output className="opened">
+					{opened ? `Opened ${opened}` : "Tap a row to open it"}
+				</output>
 			</footer>
 			<header>
 				<h2>Windowed list</h2>
@@ -405,7 +435,7 @@ function App() {
 				</p>
 			</header>
 			<section className="stage" dir={dir}>
-				<WindowedList key={inbox} dir={dir} />
+				<WindowedList key={inbox} dir={dir} onOpen={setOpened} />
 			</section>
 		</main>
 	);
@@ -439,6 +469,7 @@ header p { margin: 0; color: var(--muted); }
 footer { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .btn { font-size: 12.5px; padding: 5px 12px; border-radius: 7px; background: var(--stage); }
 .btn:hover { background: var(--line); }
+.opened { font-size: 12.5px; color: var(--muted); }
 
 .mail { width: min(100%, 380px); background: var(--surface); border-radius: 12px; overflow: hidden; }
 .row { position: relative; overflow: hidden; }
