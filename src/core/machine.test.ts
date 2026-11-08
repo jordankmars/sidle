@@ -190,6 +190,39 @@ describe("createSwipeMachine", () => {
 		});
 	});
 
+	describe("multiple pointers", () => {
+		it("ignores a second pointer during a drag", () => {
+			const m = setup();
+			m.down({ x: 200, y: 100, time: 0, id: 1 });
+			m.move({ x: 150, y: 100, time: 100, id: 1 });
+			const { offset } = m.getState();
+
+			m.down({ x: 50, y: 100, time: 110, id: 2 });
+			m.move({ x: 300, y: 100, time: 120, id: 2 });
+			m.up({ x: 300, y: 100, time: 130, id: 2 });
+
+			expect(m.getState()).toMatchObject({ phase: "dragging", offset });
+		});
+
+		it("lets the first pointer finish the drag", () => {
+			const m = setup();
+			m.down({ x: 200, y: 100, time: 0, id: 1 });
+			m.move({ x: 100, y: 100, time: 300, id: 1 });
+			m.down({ x: 50, y: 100, time: 310, id: 2 });
+			m.up({ x: 100, y: 100, time: 320, id: 1 });
+			settle(m);
+			expect(m.getState()).toMatchObject({ phase: "idle", openSide: "end" });
+		});
+
+		it("replaces a pending gesture whose pointer never came back", () => {
+			const m = setup();
+			m.down({ x: 200, y: 100, time: 0, id: 1 });
+			m.down({ x: 200, y: 100, time: 500, id: 2 });
+			m.move({ x: 100, y: 100, time: 800, id: 2 });
+			expect(m.getState().phase).toBe("dragging");
+		});
+	});
+
 	describe("edge guard", () => {
 		it("ignores drags that start at the leading screen edge", () => {
 			const m = createSwipeMachine({ edgeGuard: 24 });

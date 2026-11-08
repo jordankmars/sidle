@@ -18,6 +18,8 @@ export interface Point {
 	y: number;
 	/** Event timestamp in ms. */
 	time: number;
+	/** Which pointer this is. Leave it out if there can only ever be one. */
+	id?: number;
 }
 
 export type Phase =
@@ -115,6 +117,7 @@ const OVERSCROLL = 40;
 const COMMIT_OVERSHOOT = 20;
 
 interface Gesture {
+	id: number | undefined;
 	x: number;
 	y: number;
 	startOffset: number;
@@ -220,7 +223,8 @@ export function createSwipeMachine(
 
 	return {
 		down(point) {
-			if (committedSide || destroyed) return;
+			// A pending gesture can be replaced: its pointer may have lifted off the row.
+			if (committedSide || destroyed || gesture?.axis === "x") return;
 			const edge = {
 				size: options.edgeGuard ?? 0,
 				viewportWidth: layout.viewportWidth,
@@ -228,6 +232,7 @@ export function createSwipeMachine(
 			};
 			if (inEdgeZone(point.x, edge)) return;
 			gesture = {
+				id: point.id,
 				x: point.x,
 				y: point.y,
 				startOffset: spring.x,
@@ -238,7 +243,7 @@ export function createSwipeMachine(
 		},
 
 		move(point) {
-			if (!gesture) return;
+			if (!gesture || point.id !== gesture.id) return;
 			const dx = point.x - gesture.x;
 			const dy = point.y - gesture.y;
 
@@ -269,8 +274,8 @@ export function createSwipeMachine(
 			});
 		},
 
-		up() {
-			if (!gesture) return;
+		up(point) {
+			if (!gesture || point.id !== gesture.id) return;
 			const wasDrag = gesture.axis === "x";
 			gesture = null;
 
