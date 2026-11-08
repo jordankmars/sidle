@@ -1,2 +1,19 @@
 // Framework-agnostic core. Internal: not exported on its own.
-export {};
+
+export type { Direction } from "./direction";
+export type { SwipeGroup } from "./group";
+export { createSwipeGroup } from "./group";
+export type { FrameLoop, FrameScheduler, Tickable } from "./loop";
+export { createFrameLoop } from "./loop";
+export type {
+	Phase,
+	Point,
+	SwipeLayout,
+	SwipeMachine,
+	SwipeMachineOptions,
+	SwipeSnapshot,
+	SwipeState,
+} from "./machine";
+export { createSwipeMachine, DEFAULT_SPRING } from "./machine";
+export type { Side, SideConfig, Sides } from "./sides";
+export type { SpringConfig } from "./spring";
