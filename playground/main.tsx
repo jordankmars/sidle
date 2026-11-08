@@ -11,6 +11,7 @@ import {
 	createFrameLoop,
 	createSwipeGroup,
 	createSwipeMachine,
+	type Direction,
 	type Point,
 	type SwipeGroup,
 	type SwipeMachine,
@@ -71,10 +72,12 @@ function toPoint(e: PointerEvent): Point {
 function Row({
 	mail,
 	group,
+	dir,
 	onRemove,
 }: {
 	mail: Mail;
 	group: SwipeGroup;
+	dir: Direction;
 	onRemove: () => void;
 }) {
 	const rowRef = useRef<HTMLDivElement>(null);
@@ -82,8 +85,11 @@ function Row({
 	const startRef = useRef<HTMLDivElement>(null);
 	const endRef = useRef<HTMLDivElement>(null);
 	const machineRef = useRef<SwipeMachine | null>(null);
+	const measureRef = useRef<() => void>(null);
 	const onRemoveRef = useRef(onRemove);
 	onRemoveRef.current = onRemove;
+	const dirRef = useRef(dir);
+	dirRef.current = dir;
 	const [flagged, setFlagged] = useState(false);
 
 	useEffect(() => {
@@ -114,16 +120,24 @@ function Row({
 		// Paint straight to the DOM. Re-rendering React every frame would be wasteful.
 		function paint({ offset, armedSide }: SwipeState) {
 			if (!body || !start || !end) return;
+			// Offsets are physical px, so flip them to find which side is showing.
+			const startward = dirRef.current === "rtl" ? -offset : offset;
 			body.style.transform = offset ? `translateX(${offset}px)` : "";
-			start.style.width = `${Math.max(0, offset)}px`;
-			end.style.width = `${Math.max(0, -offset)}px`;
+			start.style.width = `${Math.max(0, startward)}px`;
+			end.style.width = `${Math.max(0, -startward)}px`;
 			start.classList.toggle("commit", armedSide === "start");
 			end.classList.toggle("commit", armedSide === "end");
 		}
 
 		const measure = () =>
-			machine.setLayout({ rowWidth: row.clientWidth, start: START, end: END });
+			machine.setLayout({
+				rowWidth: row.clientWidth,
+				dir: dirRef.current,
+				start: START,
+				end: END,
+			});
 		measure();
+		measureRef.current = measure;
 		const resize = new ResizeObserver(measure);
 		resize.observe(row);
 
@@ -140,8 +154,14 @@ function Row({
 			unsubscribe();
 			stopLoop();
 			machineRef.current = null;
+			measureRef.current = null;
 		};
 	}, [group, mail.id]);
+
+	// Direction isn't something a ResizeObserver sees, so re-measure when it flips.
+	useEffect(() => {
+		if (dir) measureRef.current?.();
+	}, [dir]);
 
 	const machine = () => machineRef.current;
 
@@ -232,7 +252,7 @@ function Row({
 	);
 }
 
-function Inbox() {
+function Inbox({ dir }: { dir: Direction }) {
 	const [mails, setMails] = useState(INBOX);
 	const [group] = useState(createSwipeGroup);
 	const listRef = useRef<HTMLDivElement>(null);
@@ -253,6 +273,7 @@ function Inbox() {
 					key={mail.id}
 					mail={mail}
 					group={group}
+					dir={dir}
 					onRemove={() => setMails((m) => m.filter((x) => x.id !== mail.id))}
 				/>
 			))}
@@ -262,6 +283,7 @@ function Inbox() {
 
 function App() {
 	const [inbox, setInbox] = useState(0);
+	const [dir, setDir] = useState<Direction>("ltr");
 	return (
 		<main>
 			<style>{CSS}</style>
@@ -272,8 +294,8 @@ function App() {
 					commit. Vertical drags still scroll.
 				</p>
 			</header>
-			<section className="stage">
-				<Inbox key={inbox} />
+			<section className="stage" dir={dir}>
+				<Inbox key={inbox} dir={dir} />
 			</section>
 			<footer>
 				<button
@@ -282,6 +304,14 @@ function App() {
 					onClick={() => setInbox((n) => n + 1)}
 				>
 					Reset inbox
+				</button>
+				<button
+					type="button"
+					className="btn"
+					aria-pressed={dir === "rtl"}
+					onClick={() => setDir((d) => (d === "ltr" ? "rtl" : "ltr"))}
+				>
+					{dir === "ltr" ? "Left to right" : "Right to left"}
 				</button>
 			</footer>
 		</main>
@@ -329,8 +359,8 @@ footer { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .body time { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--muted); }
 .body span { grid-column: 1 / -1; color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .actions { position: absolute; top: 0; bottom: 0; display: flex; overflow: hidden; width: 0; }
-.actions.start { left: 0; }
-.actions.end { right: 0; }
+.actions.start { inset-inline-start: 0; }
+.actions.end { inset-inline-end: 0; }
 .action {
 	flex: 1 1 0; min-width: 0; color: #fff; font-weight: 500; font-size: 12.5px; white-space: nowrap;
 	overflow: hidden; transition: flex-grow .2s ease;
