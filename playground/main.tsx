@@ -197,12 +197,10 @@ function Row({
 	function onPointerMove(e: PointerEvent<HTMLElement>) {
 		const m = machine();
 		if (!m) return;
+		const wasDragging = m.getState().phase === "dragging";
 		m.move(toPoint(e));
 		// Once the drag is ours, keep getting events even if the pointer leaves the row.
-		if (
-			m.getState().phase === "dragging" &&
-			!e.currentTarget.hasPointerCapture(e.pointerId)
-		) {
+		if (!wasDragging && m.getState().phase === "dragging") {
 			e.currentTarget.setPointerCapture(e.pointerId);
 		}
 	}
