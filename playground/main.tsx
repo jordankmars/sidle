@@ -1,6 +1,7 @@
 import {
 	type KeyboardEvent,
 	type PointerEvent,
+	type RefObject,
 	StrictMode,
 	useEffect,
 	useRef,
@@ -33,6 +34,7 @@ interface Mail {
 	from: string;
 	when: string;
 	text: string;
+	flagged?: boolean;
 }
 
 const INBOX: Mail[] = [
@@ -62,6 +64,13 @@ const INBOX: Mail[] = [
 	},
 ];
 
+// A long list for the windowed demo, built by cycling through the inbox.
+const MANY: Mail[] = Array.from({ length: 200 }, (_, i) => ({
+	...INBOX[i % INBOX.length],
+	id: `many-${i}`,
+	from: `${INBOX[i % INBOX.length].from} #${i + 1}`,
+}));
+
 const START = { width: 90, commit: true };
 const END = { width: 150, commit: true };
 
@@ -73,11 +82,13 @@ function Row({
 	mail,
 	group,
 	dir,
+	onFlag,
 	onRemove,
 }: {
 	mail: Mail;
 	group: SwipeGroup;
 	dir: Direction;
+	onFlag: () => void;
 	onRemove: () => void;
 }) {
 	const rowRef = useRef<HTMLDivElement>(null);
@@ -90,7 +101,6 @@ function Row({
 	onRemoveRef.current = onRemove;
 	const dirRef = useRef(dir);
 	dirRef.current = dir;
-	const [flagged, setFlagged] = useState(false);
 
 	useEffect(() => {
 		const row = rowRef.current;
@@ -100,7 +110,8 @@ function Row({
 		if (!row || !body || !start || !end) return;
 
 		function collapse() {
-			if (!row) return;
+			// A row destroyed mid-commit (scrolled away, say) is already gone.
+			if (!row?.isConnected) return onRemoveRef.current();
 			const animation = row.animate(
 				[{ height: `${row.offsetHeight}px` }, { height: "0px" }],
 				{
@@ -152,6 +163,8 @@ function Row({
 		const leaveGroup = group.register(mail.id, machine);
 
 		return () => {
+			// Settle first so a commit in flight still lands and the group sees the final state.
+			machine.destroy();
 			leaveGroup();
 			resize.disconnect();
 			unsubscribe();
@@ -169,7 +182,7 @@ function Row({
 	const machine = () => machineRef.current;
 
 	function flag() {
-		setFlagged((f) => !f);
+		onFlag();
 		machine()?.close();
 	}
 
@@ -203,7 +216,7 @@ function Row({
 	}
 
 	return (
-		<div ref={rowRef} className={flagged ? "row flagged" : "row"}>
+		<div ref={rowRef} className={mail.flagged ? "row flagged" : "row"}>
 			<div ref={startRef} className="actions start">
 				<button
 					type="button"
@@ -255,19 +268,35 @@ function Row({
 	);
 }
 
-function Inbox({ dir }: { dir: Direction }) {
-	const [mails, setMails] = useState(INBOX);
-	const [group] = useState(createSwipeGroup);
-	const listRef = useRef<HTMLDivElement>(null);
+function useMailList(initial: Mail[]) {
+	const [mails, setMails] = useState(initial);
+	return {
+		mails,
+		remove: (id: string) => setMails((m) => m.filter((x) => x.id !== id)),
+		toggleFlag: (id: string) =>
+			setMails((m) =>
+				m.map((x) => (x.id === id ? { ...x, flagged: !x.flagged } : x)),
+			),
+	};
+}
 
-	// Tapping anywhere outside the list closes whichever row is open.
+/** One open row per list, and a tap anywhere outside the list closes it. */
+function useSwipeGroup(listRef: RefObject<HTMLElement | null>) {
+	const [group] = useState(createSwipeGroup);
 	useEffect(() => {
 		function onPointerDown(e: globalThis.PointerEvent) {
 			if (!listRef.current?.contains(e.target as Node)) group.closeAll();
 		}
 		document.addEventListener("pointerdown", onPointerDown);
 		return () => document.removeEventListener("pointerdown", onPointerDown);
-	}, [group]);
+	}, [group, listRef]);
+	return group;
+}
+
+function Inbox({ dir }: { dir: Direction }) {
+	const { mails, remove, toggleFlag } = useMailList(INBOX);
+	const listRef = useRef<HTMLDivElement>(null);
+	const group = useSwipeGroup(listRef);
 
 	return (
 		<div ref={listRef} className="mail">
@@ -277,9 +306,60 @@ function Inbox({ dir }: { dir: Direction }) {
 					mail={mail}
 					group={group}
 					dir={dir}
-					onRemove={() => setMails((m) => m.filter((x) => x.id !== mail.id))}
+					onFlag={() => toggleFlag(mail.id)}
+					onRemove={() => remove(mail.id)}
 				/>
 			))}
+		</div>
+	);
+}
+
+const ROW_HEIGHT = 60;
+const OVERSCAN = 3;
+
+/**
+ * A hand-rolled windowed list: only the rows in view are mounted. Open a row,
+ * scroll it away and back, and it should still be open.
+ */
+function WindowedList({ dir }: { dir: Direction }) {
+	const { mails, remove, toggleFlag } = useMailList(MANY);
+	const listRef = useRef<HTMLDivElement>(null);
+	const group = useSwipeGroup(listRef);
+	const [scrollTop, setScrollTop] = useState(0);
+	const [height, setHeight] = useState(320);
+
+	useEffect(() => {
+		const list = listRef.current;
+		if (!list) return;
+		const resize = new ResizeObserver(() => setHeight(list.clientHeight));
+		resize.observe(list);
+		return () => resize.disconnect();
+	}, []);
+
+	const first = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
+	const last = Math.min(
+		mails.length,
+		Math.ceil((scrollTop + height) / ROW_HEIGHT) + OVERSCAN,
+	);
+
+	return (
+		<div
+			ref={listRef}
+			className="mail windowed"
+			onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
+		>
+			<div style={{ height: first * ROW_HEIGHT }} />
+			{mails.slice(first, last).map((mail) => (
+				<Row
+					key={mail.id}
+					mail={mail}
+					group={group}
+					dir={dir}
+					onFlag={() => toggleFlag(mail.id)}
+					onRemove={() => remove(mail.id)}
+				/>
+			))}
+			<div style={{ height: (mails.length - last) * ROW_HEIGHT }} />
 		</div>
 	);
 }
@@ -317,6 +397,16 @@ function App() {
 					{dir === "ltr" ? "Left to right" : "Right to left"}
 				</button>
 			</footer>
+			<header>
+				<h2>Windowed list</h2>
+				<p>
+					200 rows, only the visible ones mounted. Open a row, scroll it out of
+					view and back, and it is still open.
+				</p>
+			</header>
+			<section className="stage" dir={dir}>
+				<WindowedList key={inbox} dir={dir} />
+			</section>
 		</main>
 	);
 }
@@ -343,6 +433,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 main { max-width: 480px; margin: 0 auto; padding: 40px 16px 64px; display: grid; gap: 16px; }
 header { display: grid; gap: 6px; }
 h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+h2 { margin: 16px 0 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
 header p { margin: 0; color: var(--muted); }
 .stage { background: var(--stage); border-radius: 12px; padding: 24px 16px; display: flex; justify-content: center; }
 footer { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -361,6 +452,8 @@ footer { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .row.flagged .body b i { display: inline-block; }
 .body time { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--muted); }
 .body span { grid-column: 1 / -1; color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.windowed { height: 320px; overflow-y: auto; overscroll-behavior: contain; }
+.windowed .body { height: ${ROW_HEIGHT}px; }
 .actions { position: absolute; top: 0; bottom: 0; display: flex; overflow: hidden; width: 0; }
 .actions.start { inset-inline-start: 0; }
 .actions.end { inset-inline-end: 0; }
