@@ -11,5 +11,11 @@
 		"noEmit": true,
 		"skipLibCheck": true
 	},
-	"include": ["src", "tsdown.config.ts", "vitest.config.ts"]
+	"include": [
+		"src",
+		"playground",
+		"tsdown.config.ts",
+		"vite.config.ts",
+		"vitest.config.ts"
+	]
 }
