@@ -12,7 +12,7 @@ import {
 	useIsomorphicLayoutEffect,
 } from "./context";
 import { createRowController } from "./controller";
-import { getPageGroup } from "./group";
+import { useGroupController } from "./group";
 
 export interface RowProps extends ComponentPropsWithoutRef<"div"> {
 	/**
@@ -35,7 +35,7 @@ export const Row = forwardRef<HTMLDivElement, RowProps>(function Row(
 ) {
 	const generated = useId();
 	const id = value ?? generated;
-	const group = getPageGroup();
+	const group = useGroupController();
 	const [controller] = useState(createRowController);
 	const rowRef = useRef<HTMLDivElement>(null);
 	const ref = useComposedRef(rowRef, forwardedRef);
