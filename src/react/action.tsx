@@ -27,7 +27,16 @@ export interface ActionProps
 
 export const Action = forwardRef<HTMLButtonElement, ActionProps>(
 	function Action(
-		{ onSelect, commit = false, shortcut, style, onClick, onKeyDown, ...props },
+		{
+			onSelect,
+			commit = false,
+			disabled = false,
+			shortcut,
+			style,
+			onClick,
+			onKeyDown,
+			...props
+		},
 		forwardedRef,
 	) {
 		const controller = useRowController("Action");
@@ -35,6 +44,7 @@ export const Action = forwardRef<HTMLButtonElement, ActionProps>(
 		const [entry] = useState<ActionEntry>(() => ({
 			element: null,
 			commit,
+			disabled,
 			shortcuts: [],
 			select: onSelect,
 		}));
@@ -59,15 +69,17 @@ export const Action = forwardRef<HTMLButtonElement, ActionProps>(
 
 		useIsomorphicLayoutEffect(() => {
 			entry.commit = commit;
+			entry.disabled = disabled;
 			entry.shortcuts = shortcuts ? shortcuts.split("\n") : [];
 			controller.measure();
-		}, [controller, entry, commit, shortcuts]);
+		}, [controller, entry, commit, disabled, shortcuts]);
 
 		return (
 			<button
 				type="button"
 				{...props}
 				ref={ref}
+				disabled={disabled}
 				tabIndex={-1}
 				data-commit={commit ? "" : undefined}
 				style={{

@@ -1,7 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { Action, Actions, Content, Row } from "./index";
-import { finishCollapse, flushFrames, setReducedMotion } from "./test-setup";
+import {
+	finishCollapse,
+	flushFrames,
+	runningAnimations,
+	setReducedMotion,
+} from "./test-setup";
 
 function swipe(element: Element, from: number, to: number) {
 	const point = { clientY: 10, pointerId: 1 };
@@ -207,6 +212,56 @@ describe("Actions and Action", () => {
 			finishCollapse();
 			expect(remove).toHaveBeenCalledOnce();
 			expect(archive).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("when disabled", () => {
+		const tree = (onSelect: () => void, disabled: boolean) => (
+			<Row>
+				<Content data-testid="content">Hello</Content>
+				<Actions side="end">
+					<Action
+						shortcut="Delete"
+						onSelect={onSelect}
+						commit
+						disabled={disabled}
+					>
+						Delete
+					</Action>
+				</Actions>
+			</Row>
+		);
+
+		it("disables the button", () => {
+			render(tree(() => {}, true));
+			expect((button("Delete") as HTMLButtonElement).disabled).toBe(true);
+		});
+
+		it("doesn't commit on a full swipe", () => {
+			const onSelect = vi.fn();
+			render(tree(onSelect, true));
+			swipe(content(), 280, 60);
+			expect(content().style.transform).toBe("translateX(-75px)");
+			expect(runningAnimations()).toHaveLength(0);
+			expect(onSelect).not.toHaveBeenCalled();
+		});
+
+		it("doesn't run or announce its shortcut", () => {
+			const onSelect = vi.fn();
+			render(tree(onSelect, true));
+			fireEvent.keyDown(content(), { key: "Delete" });
+			flushFrames();
+			expect(runningAnimations()).toHaveLength(0);
+			expect(content().hasAttribute("aria-keyshortcuts")).toBe(false);
+		});
+
+		it("commits again once it's enabled", () => {
+			const onSelect = vi.fn();
+			const { rerender } = render(tree(onSelect, true));
+			rerender(tree(onSelect, false));
+			swipe(content(), 280, 60);
+			finishCollapse();
+			expect(onSelect).toHaveBeenCalledOnce();
 		});
 	});
 

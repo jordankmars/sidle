@@ -24,6 +24,7 @@ export interface ConnectOptions {
 export interface ActionEntry {
 	element: HTMLElement | null;
 	commit: boolean;
+	disabled: boolean;
 	shortcuts: string[];
 	select(): void;
 }
@@ -74,6 +75,8 @@ function toPoint(event: PointerEvent): Point {
 	};
 }
 
+const canCommit = (action: ActionEntry) => action.commit && !action.disabled;
+
 function setAttribute(element: Element, name: string, value: string | null) {
 	if (value === null) element.removeAttribute(name);
 	else element.setAttribute(name, value);
@@ -93,7 +96,7 @@ export function createRowController(): RowController {
 
 	/** The action a full swipe on this side commits. */
 	function mainAction(side: Side): ActionEntry | undefined {
-		return [...(panels[side]?.actions ?? [])].filter((a) => a.commit).at(-1);
+		return [...(panels[side]?.actions ?? [])].filter(canCommit).at(-1);
 	}
 
 	function focusContent() {
@@ -118,7 +121,9 @@ export function createRowController(): RowController {
 	function publishShortcuts() {
 		if (!content) return;
 		const keys = SIDES.flatMap((side) =>
-			[...(panels[side]?.actions ?? [])].flatMap((action) => action.shortcuts),
+			[...(panels[side]?.actions ?? [])]
+				.filter((action) => !action.disabled)
+				.flatMap((action) => action.shortcuts),
 		).map((key) => (key === " " ? "Space" : key));
 		setAttribute(
 			content,
@@ -133,7 +138,7 @@ export function createRowController(): RowController {
 		const actions = [...panel.actions];
 		return {
 			width: panel.width ?? actions.length * ACTION_WIDTH,
-			commit: actions.some((action) => action.commit),
+			commit: actions.some(canCommit),
 		};
 	}
 
@@ -277,6 +282,7 @@ export function createRowController(): RowController {
 				for (const action of panel?.actions ?? []) {
 					if (
 						panel &&
+						!action.disabled &&
 						action.shortcuts.some((k) => k.toLowerCase() === pressed)
 					) {
 						event.preventDefault();
