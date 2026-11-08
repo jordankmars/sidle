@@ -75,7 +75,7 @@ const START = { width: 90, commit: true };
 const END = { width: 150, commit: true };
 
 function toPoint(e: PointerEvent): Point {
-	return { x: e.clientX, y: e.clientY, time: e.timeStamp };
+	return { x: e.clientX, y: e.clientY, time: e.timeStamp, id: e.pointerId };
 }
 
 function Row({
