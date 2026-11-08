@@ -78,8 +78,47 @@ describe("createSwipeGroup", () => {
 		group.register("b", b);
 		a.open("end");
 		removeA();
-		expect(group.openId).toBeNull();
 		b.open("end");
 		expect(a.getState().openSide).toBe("end");
+	});
+
+	it("reopens a row that comes back after being unmounted", () => {
+		const group = createSwipeGroup();
+		const first = row();
+		const remove = group.register("a", first);
+		first.open("start");
+		first.destroy();
+		remove();
+		expect(group.openId).toBe("a");
+
+		const second = row();
+		group.register("a", second);
+		expect(second.getState()).toMatchObject({ offset: 90, openSide: "start" });
+	});
+
+	it("forgets an unmounted row once another row opens", () => {
+		const group = createSwipeGroup();
+		const a = row();
+		const removeA = group.register("a", a);
+		a.open("end");
+		removeA();
+		const b = row();
+		group.register("b", b);
+		b.open("end");
+
+		const again = row();
+		group.register("a", again);
+		expect(again.getState().openSide).toBeNull();
+		expect(group.openId).toBe("b");
+	});
+
+	it("forgets an unmounted row when everything is closed", () => {
+		const group = createSwipeGroup();
+		const a = row();
+		const removeA = group.register("a", a);
+		a.open("end");
+		removeA();
+		group.closeAll();
+		expect(group.openId).toBeNull();
 	});
 });
