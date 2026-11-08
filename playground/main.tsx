@@ -9,8 +9,10 @@ import {
 import { createRoot } from "react-dom/client";
 import {
 	createFrameLoop,
+	createSwipeGroup,
 	createSwipeMachine,
 	type Point,
+	type SwipeGroup,
 	type SwipeMachine,
 	type SwipeState,
 } from "../src/core";
@@ -66,7 +68,15 @@ function toPoint(e: PointerEvent): Point {
 	return { x: e.clientX, y: e.clientY, time: e.timeStamp };
 }
 
-function Row({ mail, onRemove }: { mail: Mail; onRemove: () => void }) {
+function Row({
+	mail,
+	group,
+	onRemove,
+}: {
+	mail: Mail;
+	group: SwipeGroup;
+	onRemove: () => void;
+}) {
 	const rowRef = useRef<HTMLDivElement>(null);
 	const bodyRef = useRef<HTMLElement>(null);
 	const startRef = useRef<HTMLDivElement>(null);
@@ -122,14 +132,16 @@ function Row({ mail, onRemove }: { mail: Mail; onRemove: () => void }) {
 			loop.wake();
 		});
 		const stopLoop = loop.add(machine);
+		const leaveGroup = group.register(mail.id, machine);
 
 		return () => {
+			leaveGroup();
 			resize.disconnect();
 			unsubscribe();
 			stopLoop();
 			machineRef.current = null;
 		};
-	}, []);
+	}, [group, mail.id]);
 
 	const machine = () => machineRef.current;
 
@@ -222,12 +234,25 @@ function Row({ mail, onRemove }: { mail: Mail; onRemove: () => void }) {
 
 function Inbox() {
 	const [mails, setMails] = useState(INBOX);
+	const [group] = useState(createSwipeGroup);
+	const listRef = useRef<HTMLDivElement>(null);
+
+	// Tapping anywhere outside the list closes whichever row is open.
+	useEffect(() => {
+		function onPointerDown(e: globalThis.PointerEvent) {
+			if (!listRef.current?.contains(e.target as Node)) group.closeAll();
+		}
+		document.addEventListener("pointerdown", onPointerDown);
+		return () => document.removeEventListener("pointerdown", onPointerDown);
+	}, [group]);
+
 	return (
-		<div className="mail">
+		<div ref={listRef} className="mail">
 			{mails.map((mail) => (
 				<Row
 					key={mail.id}
 					mail={mail}
+					group={group}
 					onRemove={() => setMails((m) => m.filter((x) => x.id !== mail.id))}
 				/>
 			))}
