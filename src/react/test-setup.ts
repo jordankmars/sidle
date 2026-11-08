@@ -1,4 +1,4 @@
-import { cleanup } from "@testing-library/react";
+import { act, cleanup } from "@testing-library/react";
 import { afterEach, beforeEach } from "vitest";
 
 // jsdom has no layout, animation or frame clock, so the browser pieces the
@@ -85,12 +85,21 @@ export function setReducedMotion(reduced: boolean) {
 	fakes.sidleReducedMotion = reduced;
 }
 
+/** Finish the most recent collapse, as if its animation had run to the end. */
+export function finishCollapse() {
+	const animation = fakes.sidleAnimations.at(-1);
+	if (!animation) throw new Error("No row is collapsing.");
+	act(() => animation.onfinish?.());
+}
+
 beforeEach(() => {
-	fakes.sidleFrames.clear();
 	fakes.sidleAnimations = [];
 	fakes.sidleReducedMotion = false;
 });
 
 afterEach(() => {
 	cleanup();
+	// The shared frame loop is still waiting on any frame it asked for. Let it run
+	// out, or it would never ask for another in the next test.
+	flushFrames();
 });

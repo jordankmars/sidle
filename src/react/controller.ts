@@ -8,6 +8,7 @@ import {
 	type SwipeMachine,
 	type SwipeState,
 } from "../core";
+import { collapseRow } from "./collapse";
 import { frameLoop } from "./frame-loop";
 import type { GroupController } from "./group";
 
@@ -147,12 +148,17 @@ export function createRowController(): RowController {
 	return {
 		connect({ row, id, group, edgeGuard }) {
 			rowElement = row;
+			let disposing = false;
+			let finishCollapse: (() => void) | undefined;
 			reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 			const current = createSwipeMachine({
 				reducedMotion,
 				edgeGuard,
 				onCommit(side) {
-					mainAction(side)?.select();
+					const done = () => mainAction(side)?.select();
+					// Already on its way out of the page, so there's nothing to animate.
+					if (disposing) done();
+					else finishCollapse = collapseRow(row, { reducedMotion }, done);
 				},
 			});
 			machine = current;
@@ -170,8 +176,10 @@ export function createRowController(): RowController {
 			paint(current.getState());
 
 			return () => {
-				// Settle first so the group sees the final state.
+				disposing = true;
+				// Settle first so a commit in flight lands and the group sees the final state.
 				current.destroy();
+				finishCollapse?.();
 				leaveGroup();
 				stopTracking();
 				stopLoop();

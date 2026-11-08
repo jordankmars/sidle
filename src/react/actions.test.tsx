@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { Action, Actions, Content, Row } from "./index";
-import { flushFrames, setReducedMotion } from "./test-setup";
+import { finishCollapse, flushFrames, setReducedMotion } from "./test-setup";
 
 function swipe(element: Element, from: number, to: number) {
 	const point = { clientY: 10, pointerId: 1 };
@@ -130,6 +130,7 @@ describe("Actions and Action", () => {
 	it("commits the main action on a full swipe", () => {
 		const { remove, flag } = setup();
 		swipe(content(), 280, 60);
+		finishCollapse();
 		expect(remove).toHaveBeenCalledOnce();
 		expect(flag).not.toHaveBeenCalled();
 	});
@@ -155,6 +156,7 @@ describe("Actions and Action", () => {
 		swipe(content(), 250, 170);
 		fireEvent.click(button("Delete"));
 		flushFrames();
+		finishCollapse();
 		expect(remove).toHaveBeenCalledOnce();
 	});
 
