@@ -1,4 +1,5 @@
-import type { Side, Sides, Sign } from "./sides";
+import { type Direction, sideOf } from "./direction";
+import type { Side, Sides } from "./sides";
 
 /** Past this fraction of the row width, letting go commits the main action. */
 export const COMMIT_RATIO = 0.6;
@@ -16,13 +17,7 @@ export interface ReleaseInput {
 	velocity: number;
 	rowWidth: number;
 	sides: Sides;
-	/** Sign of the offset that reveals the start side. */
-	startSign?: Sign;
-}
-
-function sideAt(offset: number, startSign: Sign): Side | null {
-	if (offset === 0) return null;
-	return Math.sign(offset) === startSign ? "start" : "end";
+	dir?: Direction;
 }
 
 /**
@@ -33,22 +28,22 @@ export function armedSide({
 	offset,
 	rowWidth,
 	sides,
-	startSign = 1,
+	dir,
 }: Omit<ReleaseInput, "velocity">): Side | null {
-	const side = sideAt(offset, startSign);
+	const side = sideOf(offset, dir);
 	if (!side || !sides[side]?.commit) return null;
 	return Math.abs(offset) > rowWidth * COMMIT_RATIO ? side : null;
 }
 
 /** Decides where a row goes when the pointer lets go. */
 export function resolveRelease(input: ReleaseInput): Release {
-	const { offset, velocity, sides, startSign = 1 } = input;
+	const { offset, velocity, sides, dir } = input;
 
 	const armed = armedSide(input);
 	if (armed) return { type: "commit", side: armed };
 
 	const projected = offset + velocity * PROJECTION;
-	const side = sideAt(projected, startSign);
+	const side = sideOf(projected, dir);
 	const config = side && sides[side];
 	if (side && config && Math.abs(projected) > config.width / 2) {
 		return { type: "open", side };

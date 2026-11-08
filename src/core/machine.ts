@@ -1,7 +1,8 @@
 import { detectAxis } from "./axis";
+import { type Direction, sideOf, signOf } from "./direction";
 import { rubber } from "./math";
 import { armedSide, resolveRelease } from "./release";
-import type { Side, SideConfig, Sides, Sign } from "./sides";
+import type { Side, SideConfig, Sides } from "./sides";
 import {
 	createSpring,
 	isSpringAtRest,
@@ -45,6 +46,8 @@ export interface SwipeState {
 export interface SwipeLayout {
 	/** Width of the row in px. */
 	rowWidth: number;
+	/** Writing direction of the row. `start` is on the right in rtl. Defaults to ltr. */
+	dir?: Direction;
 	start?: SideConfig;
 	end?: SideConfig;
 }
@@ -86,7 +89,6 @@ export const DEFAULT_SPRING: SpringConfig = {
 const OVERSCROLL = 40;
 /** Extra distance past the row edge a committed row travels, so it fully clears. */
 const COMMIT_OVERSHOOT = 20;
-const START_SIGN: Sign = 1;
 
 interface Gesture {
 	x: number;
@@ -115,8 +117,8 @@ export function createSwipeMachine(
 		armedSide: null,
 	};
 
-	const signOf = (side: Side): Sign =>
-		(side === "start" ? START_SIGN : -START_SIGN) as Sign;
+	const offsetFor = (side: Side, distance: number) =>
+		signOf(side, layout.dir) * distance;
 	const sides = (): Sides => ({ start: layout.start, end: layout.end });
 
 	function emit(patch: Partial<SwipeState>) {
@@ -162,7 +164,7 @@ export function createSwipeMachine(
 		if (!layout[side]?.commit || committedSide) return;
 		committedSide = side;
 		gesture = null;
-		const to = signOf(side) * (layout.rowWidth + COMMIT_OVERSHOOT);
+		const to = offsetFor(side, layout.rowWidth + COMMIT_OVERSHOOT);
 		settle(to, side, velocity);
 	}
 
@@ -173,8 +175,8 @@ export function createSwipeMachine(
 	}
 
 	function dragOffset(raw: number): number {
-		const side: Side = Math.sign(raw) === START_SIGN ? "start" : "end";
-		const max = maxTravel(layout[side]);
+		const side = sideOf(raw, layout.dir);
+		const max = side ? maxTravel(layout[side]) : 0;
 		const distance = Math.abs(raw);
 		if (distance <= max) return raw;
 		return Math.sign(raw) * (max + rubber(distance - max, OVERSCROLL));
@@ -220,7 +222,7 @@ export function createSwipeMachine(
 					offset,
 					rowWidth: layout.rowWidth,
 					sides: sides(),
-					startSign: START_SIGN,
+					dir: layout.dir,
 				}),
 			});
 		},
@@ -243,7 +245,7 @@ export function createSwipeMachine(
 				velocity,
 				rowWidth: layout.rowWidth,
 				sides: sides(),
-				startSign: START_SIGN,
+				dir: layout.dir,
 			});
 			if (release.type === "close") {
 				settle(0, null, velocity);
@@ -252,7 +254,7 @@ export function createSwipeMachine(
 			} else {
 				const config = layout[release.side];
 				if (config)
-					settle(signOf(release.side) * config.width, release.side, velocity);
+					settle(offsetFor(release.side, config.width), release.side, velocity);
 			}
 		},
 
@@ -275,7 +277,7 @@ export function createSwipeMachine(
 		open(side) {
 			const config = layout[side];
 			if (!config || committedSide || gesture?.axis === "x") return;
-			settle(signOf(side) * config.width, side);
+			settle(offsetFor(side, config.width), side);
 		},
 
 		close() {
@@ -292,7 +294,7 @@ export function createSwipeMachine(
 			// Keep an open row pinned to its side if the action widths change.
 			if (!gesture && !animating && !committedSide && state.openSide) {
 				const config = layout[state.openSide];
-				const to = config ? signOf(state.openSide) * config.width : 0;
+				const to = config ? offsetFor(state.openSide, config.width) : 0;
 				spring = createSpring(to);
 				emit({ offset: to, openSide: config ? state.openSide : null });
 			}

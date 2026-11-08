@@ -161,6 +161,35 @@ describe("createSwipeMachine", () => {
 		expect(m.getState()).toMatchObject({ offset: -200, openSide: "end" });
 	});
 
+	describe("right-to-left", () => {
+		it("reveals the start side by dragging left", () => {
+			const m = createSwipeMachine();
+			m.setLayout({ ...layout, dir: "rtl" });
+			release(m, -100);
+			settle(m);
+			expect(m.getState()).toMatchObject({ offset: -90, openSide: "start" });
+		});
+
+		it("opens and commits towards the mirrored edge", () => {
+			const m = createSwipeMachine();
+			m.setLayout({ ...committable, dir: "rtl" });
+			m.open("end");
+			settle(m);
+			expect(m.getState().offset).toBe(150);
+			m.commit("end");
+			settle(m);
+			expect(m.getState().offset).toBe(W + 20);
+		});
+
+		it("flips an open row when the direction changes", () => {
+			const m = setup();
+			m.open("end");
+			settle(m);
+			m.setLayout({ ...layout, dir: "rtl" });
+			expect(m.getState()).toMatchObject({ offset: 150, openSide: "end" });
+		});
+	});
+
 	describe("full-swipe commit", () => {
 		function setupCommit(onCommit?: (side: string) => void) {
 			const m = createSwipeMachine({ onCommit });

@@ -20,8 +20,8 @@ describe("armedSide", () => {
 		expect(armedSide({ offset: -W, rowWidth: W, sides: noCommit })).toBeNull();
 	});
 
-	it("respects a flipped start sign", () => {
-		expect(armedSide({ offset: -W, rowWidth: W, sides, startSign: -1 })).toBe(
+	it("mirrors sides in right-to-left layouts", () => {
+		expect(armedSide({ offset: -W, rowWidth: W, sides, dir: "rtl" })).toBe(
 			"start",
 		);
 	});
@@ -85,6 +85,18 @@ describe("resolveRelease", () => {
 				velocity: 0,
 				rowWidth: W,
 				sides: { end: { width: 150 } },
+			}),
+		).toEqual({ type: "open", side: "end" });
+	});
+
+	it("opens the mirrored side in right-to-left layouts", () => {
+		expect(
+			resolveRelease({
+				offset: 80,
+				velocity: 0,
+				rowWidth: W,
+				sides,
+				dir: "rtl",
 			}),
 		).toEqual({ type: "open", side: "end" });
 	});
