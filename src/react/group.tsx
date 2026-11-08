@@ -7,6 +7,8 @@ export interface GroupController {
 	addRow(element: HTMLElement): () => void;
 	/** The row to move focus to when this one goes away: the next, else the previous. */
 	neighbor(element: HTMLElement): HTMLElement | null;
+	/** Close any other row that's open on screen. Returns true if there was one. */
+	closeOthers(element: HTMLElement, id: string): boolean;
 }
 
 export function createGroupController(): GroupController {
@@ -45,6 +47,19 @@ export function createGroupController(): GroupController {
 				);
 			const index = live.indexOf(element);
 			return live[index + 1] ?? live[index - 1] ?? null;
+		},
+		closeOthers(element, id) {
+			// Not `swipe.openId`: that can be a row a virtualized list has unmounted,
+			// and nobody can see that one close.
+			const found = ([...rows] as HTMLElement[]).some(
+				(row) =>
+					row !== element &&
+					row.dataset.openSide &&
+					row.dataset.phase !== "committing" &&
+					row.dataset.phase !== "committed",
+			);
+			if (found) swipe.closeAll(id);
+			return found;
 		},
 	};
 }

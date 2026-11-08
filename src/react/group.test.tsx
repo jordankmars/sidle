@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createGroupController, getPageGroup } from "./group";
 import { Action, Actions, Content, Group, Row } from "./index";
 import { flushFrames } from "./test-setup";
@@ -63,10 +63,12 @@ describe("getPageGroup", () => {
 	});
 });
 
-function SwipeRow({ name }: { name: string }) {
+function SwipeRow({ name, onClick }: { name: string; onClick?: () => void }) {
 	return (
 		<Row value={name} data-testid={`row-${name}`}>
-			<Content data-testid={name}>{name}</Content>
+			<Content data-testid={name} onClick={onClick}>
+				{name}
+			</Content>
 			<Actions side="end">
 				<Action onSelect={() => {}}>Flag</Action>
 			</Actions>
@@ -80,6 +82,16 @@ function open(name: string) {
 	fireEvent.pointerDown(element, { ...point, button: 0, clientX: 250 });
 	fireEvent.pointerMove(element, { ...point, clientX: 170 });
 	fireEvent.pointerUp(element, { ...point, clientX: 170 });
+	act(() => flushFrames());
+}
+
+function tap(name: string) {
+	const element = screen.getByTestId(name);
+	const point = { clientX: 250, clientY: 10, pointerId: 2 };
+	fireEvent.pointerDown(element, { ...point, button: 0 });
+	fireEvent.pointerUp(element, point);
+	// A real click has a detail of 1. Only keyboard clicks have 0.
+	fireEvent.click(element, { detail: 1 });
 	act(() => flushFrames());
 }
 
@@ -138,22 +150,80 @@ describe("Group", () => {
 		expect(isOpen("a")).toBe(false);
 	});
 
-	it("doesn't count a tap on the group's own rows as outside", () => {
+	describe("a tap on another row while one is open", () => {
+		function setup() {
+			const onClick = vi.fn();
+			render(
+				<Group>
+					<SwipeRow name="a" />
+					<SwipeRow name="b" onClick={onClick} />
+				</Group>,
+			);
+			open("a");
+			return onClick;
+		}
+
+		it("closes the open row as soon as the pointer lands", () => {
+			setup();
+			fireEvent.pointerDown(screen.getByTestId("b"), {
+				button: 0,
+				clientX: 250,
+				clientY: 10,
+				pointerId: 2,
+			});
+			act(() => flushFrames());
+			expect(isOpen("a")).toBe(false);
+		});
+
+		it("doesn't activate the tapped row, but the next tap does", () => {
+			const onClick = setup();
+			tap("b");
+			expect(isOpen("a")).toBe(false);
+			expect(onClick).not.toHaveBeenCalled();
+			tap("b");
+			expect(onClick).toHaveBeenCalledOnce();
+		});
+
+		it("still activates the row from the keyboard", () => {
+			const onClick = setup();
+			const element = screen.getByTestId("b");
+			act(() => element.focus());
+			fireEvent.keyDown(element, { key: "Enter" });
+			expect(onClick).toHaveBeenCalledOnce();
+		});
+	});
+
+	it("leaves another group's open row alone on a tap", () => {
+		const onClick = vi.fn();
 		render(
-			<Group>
-				<SwipeRow name="a" />
-				<SwipeRow name="b" />
-			</Group>,
+			<>
+				<Group>
+					<SwipeRow name="a" />
+				</Group>
+				<Group>
+					<SwipeRow name="b" onClick={onClick} />
+				</Group>
+			</>,
 		);
 		open("a");
-		fireEvent.pointerDown(screen.getByTestId("b"), {
-			button: 0,
-			clientX: 250,
-			clientY: 10,
-			pointerId: 2,
-		});
-		act(() => flushFrames());
+		tap("b");
 		expect(isOpen("a")).toBe(true);
+		expect(onClick).toHaveBeenCalledOnce();
+	});
+
+	it("doesn't swallow a tap for an open row that isn't mounted", () => {
+		const onClick = vi.fn();
+		const tree = (show: boolean) => (
+			<Group>
+				{show && <SwipeRow name="a" />}
+				<SwipeRow name="b" onClick={onClick} />
+			</Group>
+		);
+		const { rerender } = render(tree(true));
+		open("a");
+		rerender(tree(false));
+		tap("b");
+		expect(onClick).toHaveBeenCalledOnce();
 	});
 
 	it("brings an unmounted row back open by value", () => {

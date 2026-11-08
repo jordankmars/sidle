@@ -90,6 +90,9 @@ export function createRowController(): RowController {
 	let dirProp: Direction | undefined;
 	let direction: Direction = "ltr";
 	let swiped = false;
+	let closeOthers: (() => boolean) | null = null;
+	/** This press closed another row, so it shouldn't activate this one too. */
+	let dismissed = false;
 	let reducedMotion = false;
 	/** The commit action picked by tap or shortcut. A full swipe leaves it empty. */
 	let chosenCommit: ActionEntry | undefined;
@@ -191,6 +194,7 @@ export function createRowController(): RowController {
 	return {
 		connect({ row, id, group, edgeGuard }) {
 			rowElement = row;
+			closeOthers = () => group.closeOthers(row, id);
 			let disposing = false;
 			let finishCollapse: (() => void) | undefined;
 			reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -241,6 +245,7 @@ export function createRowController(): RowController {
 				resize.disconnect();
 				machine = null;
 				rowElement = null;
+				closeOthers = null;
 			};
 		},
 
@@ -313,6 +318,8 @@ export function createRowController(): RowController {
 		pointerDown(event) {
 			if (event.button !== 0) return;
 			swiped = false;
+			// Before the machine sees it, so a press inside the edge guard counts too.
+			dismissed = closeOthers?.() ?? false;
 			// Direction can change on an ancestor without anything telling us.
 			if (!dirProp) measure();
 			machine?.down(toPoint(event));
@@ -329,7 +336,7 @@ export function createRowController(): RowController {
 		},
 
 		pointerUp(event) {
-			swiped = machine?.up(toPoint(event)) ?? false;
+			swiped = (machine?.up(toPoint(event)) ?? false) || dismissed;
 		},
 
 		pointerCancel() {
