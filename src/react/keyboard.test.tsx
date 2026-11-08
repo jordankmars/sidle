@@ -54,6 +54,27 @@ describe("keyboard", () => {
 		expect(remove).toHaveBeenCalledOnce();
 	});
 
+	it("runs a shortcut once while the key is held", () => {
+		const { flag } = setup();
+		press("f");
+		expect(press("f", { repeat: true })).toBe(false);
+		expect(flag).toHaveBeenCalledOnce();
+	});
+
+	it("activates the content once while Enter is held", () => {
+		const { onClick } = setup();
+		press("Enter");
+		press("Enter", { repeat: true });
+		expect(onClick).toHaveBeenCalledOnce();
+	});
+
+	it("ignores other actions while the row is on its way out", () => {
+		const { flag } = setup();
+		press("Delete");
+		press("f");
+		expect(flag).not.toHaveBeenCalled();
+	});
+
 	it("leaves shortcuts with modifiers to the browser", () => {
 		const { flag } = setup();
 		expect(press("f", { metaKey: true })).toBe(true);

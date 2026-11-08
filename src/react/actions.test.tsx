@@ -190,6 +190,17 @@ describe("Actions and Action", () => {
 			expect(remove).not.toHaveBeenCalled();
 		});
 
+		it("sticks with the first one tapped", () => {
+			const { archive, remove } = setupTwoCommits();
+			swipe(content(), 250, 170);
+			fireEvent.click(button("Archive"));
+			fireEvent.click(button("Delete"));
+			flushFrames();
+			finishCollapse();
+			expect(archive).toHaveBeenCalledOnce();
+			expect(remove).not.toHaveBeenCalled();
+		});
+
 		it("runs the last one on a full swipe", () => {
 			const { archive, remove } = setupTwoCommits();
 			swipe(content(), 280, 60);

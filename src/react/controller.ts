@@ -102,6 +102,8 @@ export function createRowController(): RowController {
 
 	function activate(panel: PanelEntry, action: ActionEntry) {
 		if (!machine) return;
+		const { phase } = machine.getState();
+		if (phase === "committing" || phase === "committed") return;
 		if (action.commit) {
 			chosenCommit = action;
 			machine.commit(panel.side);
@@ -278,7 +280,8 @@ export function createRowController(): RowController {
 						action.shortcuts.some((k) => k.toLowerCase() === pressed)
 					) {
 						event.preventDefault();
-						activate(panel, action);
+						// Holding a key mustn't run the action again, or delete the whole list.
+						if (!event.repeat) activate(panel, action);
 						return;
 					}
 				}
@@ -290,7 +293,7 @@ export function createRowController(): RowController {
 				machine.close();
 			} else if (event.key === "Enter") {
 				event.preventDefault();
-				event.currentTarget.click();
+				if (!event.repeat) event.currentTarget.click();
 			} else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
 				if (!dirProp) measure();
 				const side = sideOf(event.key === "ArrowRight" ? 1 : -1, direction);
