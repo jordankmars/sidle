@@ -27,7 +27,7 @@ export interface ActionProps
 
 export const Action = forwardRef<HTMLButtonElement, ActionProps>(
 	function Action(
-		{ onSelect, commit = false, shortcut, style, onClick, ...props },
+		{ onSelect, commit = false, shortcut, style, onClick, onKeyDown, ...props },
 		forwardedRef,
 	) {
 		const controller = useRowController("Action");
@@ -77,6 +77,13 @@ export const Action = forwardRef<HTMLButtonElement, ActionProps>(
 					whiteSpace: "nowrap",
 					transition: "flex-grow .2s ease",
 					...style,
+				}}
+				onKeyDown={(event) => {
+					onKeyDown?.(event);
+					if (event.key === "Escape" && !event.defaultPrevented) {
+						event.preventDefault();
+						controller.dismiss();
+					}
 				}}
 				onClick={(event) => {
 					onClick?.(event);

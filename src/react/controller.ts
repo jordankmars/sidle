@@ -1,4 +1,4 @@
-import type { MouseEvent, PointerEvent } from "react";
+import type { KeyboardEvent, MouseEvent, PointerEvent } from "react";
 import {
 	createSwipeMachine,
 	type Direction,
@@ -8,6 +8,7 @@ import {
 	type SwipeMachine,
 	type SwipeState,
 } from "../core";
+import { sideOf } from "../core/direction";
 import { collapseRow } from "./collapse";
 import { frameLoop } from "./frame-loop";
 import type { GroupController } from "./group";
@@ -53,6 +54,9 @@ export interface RowController {
 	setDir(dir: Direction | undefined): void;
 	/** Read the row's size and parts again and hand them to the machine. */
 	measure(): void;
+	keyDown(event: KeyboardEvent<HTMLElement>): void;
+	/** Close the row and put focus back on its content. */
+	dismiss(): void;
 	pointerDown(event: PointerEvent<HTMLElement>): void;
 	pointerMove(event: PointerEvent<HTMLElement>): void;
 	pointerUp(event: PointerEvent<HTMLElement>): void;
@@ -90,6 +94,34 @@ export function createRowController(): RowController {
 		return [...(panels[side]?.actions ?? [])].filter((a) => a.commit).at(-1);
 	}
 
+	function focusContent() {
+		if (document.activeElement !== content) content?.focus();
+	}
+
+	function activate(panel: PanelEntry, action: ActionEntry) {
+		if (!machine) return;
+		if (action.commit) {
+			machine.commit(panel.side);
+			return;
+		}
+		action.select();
+		machine.close();
+		// The button is about to be hidden, so don't leave focus on it.
+		if (rowElement?.contains(document.activeElement)) focusContent();
+	}
+
+	function publishShortcuts() {
+		if (!content) return;
+		const keys = SIDES.flatMap((side) =>
+			[...(panels[side]?.actions ?? [])].flatMap((action) => action.shortcuts),
+		).map((key) => (key === " " ? "Space" : key));
+		setAttribute(
+			content,
+			"aria-keyshortcuts",
+			keys.length > 0 ? keys.join(" ") : null,
+		);
+	}
+
 	function sideConfig(side: Side): SideConfig | undefined {
 		const panel = panels[side];
 		if (!panel || panel.actions.size === 0) return undefined;
@@ -112,6 +144,7 @@ export function createRowController(): RowController {
 			start: sideConfig("start"),
 			end: sideConfig("end"),
 		});
+		publishShortcuts();
 		// A new action or a flipped direction changes the DOM without changing the state.
 		paint(machine.getState());
 	}
@@ -155,7 +188,16 @@ export function createRowController(): RowController {
 				reducedMotion,
 				edgeGuard,
 				onCommit(side) {
-					const done = () => mainAction(side)?.select();
+					const done = () => {
+						// Removing the row would drop focus on the floor, so pass it along.
+						if (!disposing && row.contains(document.activeElement)) {
+							group
+								.neighbor(row)
+								?.querySelector<HTMLElement>("[data-sidle-content]")
+								?.focus();
+						}
+						mainAction(side)?.select();
+					};
 					// Already on its way out of the page, so there's nothing to animate.
 					if (disposing) done();
 					else finishCollapse = collapseRow(row, { reducedMotion }, done);
@@ -203,15 +245,7 @@ export function createRowController(): RowController {
 			};
 		},
 
-		activate(panel, action) {
-			if (!machine) return;
-			if (action.commit) {
-				machine.commit(panel.side);
-				return;
-			}
-			action.select();
-			machine.close();
-		},
+		activate,
 
 		setDir(dir) {
 			dirProp = dir;
@@ -219,6 +253,48 @@ export function createRowController(): RowController {
 		},
 
 		measure,
+
+		dismiss() {
+			machine?.close();
+			focusContent();
+		},
+
+		keyDown(event) {
+			if (!machine || event.target !== event.currentTarget) return;
+			// Leave browser and OS shortcuts alone.
+			if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+			const pressed = event.key.toLowerCase();
+			for (const side of SIDES) {
+				const panel = panels[side];
+				for (const action of panel?.actions ?? []) {
+					if (
+						panel &&
+						action.shortcuts.some((k) => k.toLowerCase() === pressed)
+					) {
+						event.preventDefault();
+						activate(panel, action);
+						return;
+					}
+				}
+			}
+
+			const { openSide } = machine.getState();
+			if (event.key === "Escape" && openSide) {
+				event.preventDefault();
+				machine.close();
+			} else if (event.key === "Enter") {
+				event.preventDefault();
+				event.currentTarget.click();
+			} else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+				if (!dirProp) measure();
+				const side = sideOf(event.key === "ArrowRight" ? 1 : -1, direction);
+				if (!side) return;
+				event.preventDefault();
+				if (openSide && openSide !== side) machine.close();
+				else machine.open(side);
+			}
+		},
 
 		pointerDown(event) {
 			if (event.button !== 0) return;

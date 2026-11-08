@@ -17,6 +17,7 @@ export const Content = forwardRef<HTMLDivElement, ContentProps>(
 			onPointerCancel,
 			onClickCapture,
 			onDragStart,
+			onKeyDown,
 			...props
 		},
 		forwardedRef,
@@ -46,6 +47,10 @@ export const Content = forwardRef<HTMLDivElement, ContentProps>(
 					userSelect: "none",
 					WebkitUserSelect: "none",
 					...style,
+				}}
+				onKeyDown={(event) => {
+					onKeyDown?.(event);
+					if (!event.defaultPrevented) controller.keyDown(event);
 				}}
 				onPointerDown={(event) => {
 					onPointerDown?.(event);
