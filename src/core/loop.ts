@@ -35,13 +35,12 @@ export function createFrameLoop(scheduler: FrameScheduler): FrameLoop {
 	function frame(now: number) {
 		const dt = (now - last) / 1000;
 		last = now;
-		handle = null;
+		// `handle` stays set while ticking, so a wake() from inside a tick is a no-op
+		// instead of starting a second chain of frames.
 		for (const item of items) {
 			if (item.needsFrame) item.tick(dt);
 		}
-		if (busy()) {
-			handle = scheduler.request(frame);
-		}
+		handle = busy() ? scheduler.request(frame) : null;
 	}
 
 	function wake() {

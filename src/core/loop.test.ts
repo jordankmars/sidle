@@ -88,6 +88,23 @@ describe("createFrameLoop", () => {
 		expect(ticks).toHaveLength(1);
 	});
 
+	it("keeps a single chain of frames when woken from inside a tick", () => {
+		const s = fakeScheduler();
+		const loop = createFrameLoop(s);
+		const item = counter(5);
+		const tick = item.tick;
+		item.tick = (dt) => {
+			tick(dt);
+			loop.wake();
+		};
+		loop.add(item);
+		s.step();
+		s.step(16);
+		s.step(16);
+		expect(s.pending).toBe(1);
+		expect(item.dts).toEqual([0.016, 0.016]);
+	});
+
 	it("stops ticking removed items", () => {
 		const s = fakeScheduler();
 		const loop = createFrameLoop(s);
