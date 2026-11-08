@@ -1,5 +1,7 @@
 // Framework-agnostic core. Internal: not exported on its own.
 
+export type { SwipeGroup } from "./group";
+export { createSwipeGroup } from "./group";
 export type { FrameLoop, FrameScheduler, Tickable } from "./loop";
 export { createFrameLoop } from "./loop";
 export type {
