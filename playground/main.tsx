@@ -113,6 +113,8 @@ function Row({
 
 		const machine = createSwipeMachine({
 			reducedMotion: REDUCED_MOTION,
+			// Leave the leading screen edge to iOS swipe-back.
+			edgeGuard: 24,
 			onCommit: collapse,
 		});
 		machineRef.current = machine;
@@ -133,6 +135,7 @@ function Row({
 			machine.setLayout({
 				rowWidth: row.clientWidth,
 				dir: dirRef.current,
+				viewportWidth: window.innerWidth,
 				start: START,
 				end: END,
 			});
