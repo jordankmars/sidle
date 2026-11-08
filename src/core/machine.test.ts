@@ -190,6 +190,31 @@ describe("createSwipeMachine", () => {
 		});
 	});
 
+	describe("edge guard", () => {
+		it("ignores drags that start at the leading screen edge", () => {
+			const m = createSwipeMachine({ edgeGuard: 24 });
+			m.setLayout(layout);
+			m.down({ x: 10, y: 100, time: 0 });
+			m.move({ x: 120, y: 100, time: 100 });
+			expect(m.getState()).toMatchObject({ phase: "idle", offset: 0 });
+		});
+
+		it("still follows drags that start away from the edge", () => {
+			const m = createSwipeMachine({ edgeGuard: 24 });
+			m.setLayout(layout);
+			drag(m, 40);
+			expect(m.getState().offset).toBe(40);
+		});
+
+		it("guards the right edge in rtl", () => {
+			const m = createSwipeMachine({ edgeGuard: 24 });
+			m.setLayout({ ...layout, dir: "rtl", viewportWidth: 400 });
+			m.down({ x: 390, y: 100, time: 0 });
+			m.move({ x: 300, y: 100, time: 100 });
+			expect(m.getState().phase).toBe("idle");
+		});
+	});
+
 	describe("full-swipe commit", () => {
 		function setupCommit(onCommit?: (side: string) => void) {
 			const m = createSwipeMachine({ onCommit });

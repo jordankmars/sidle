@@ -1,5 +1,6 @@
 import { detectAxis } from "./axis";
 import { type Direction, sideOf, signOf } from "./direction";
+import { inEdgeZone } from "./edge";
 import { rubber } from "./math";
 import { armedSide, resolveRelease } from "./release";
 import type { Side, SideConfig, Sides } from "./sides";
@@ -48,6 +49,8 @@ export interface SwipeLayout {
 	rowWidth: number;
 	/** Writing direction of the row. `start` is on the right in rtl. Defaults to ltr. */
 	dir?: Direction;
+	/** Width of the viewport in px. Only needed for `edgeGuard` in rtl. */
+	viewportWidth?: number;
 	start?: SideConfig;
 	end?: SideConfig;
 }
@@ -56,6 +59,11 @@ export interface SwipeMachineOptions {
 	spring?: Partial<SpringConfig>;
 	/** Jump straight to targets instead of animating. */
 	reducedMotion?: boolean;
+	/**
+	 * Ignore pointers that start this close (px) to the leading screen edge, so
+	 * the iOS swipe-back gesture wins. Off by default.
+	 */
+	edgeGuard?: number;
 	/** Called once the row has finished sliding off-screen. */
 	onCommit?: (side: Side) => void;
 }
@@ -185,6 +193,12 @@ export function createSwipeMachine(
 	return {
 		down(point) {
 			if (committedSide) return;
+			const edge = {
+				size: options.edgeGuard ?? 0,
+				viewportWidth: layout.viewportWidth,
+				dir: layout.dir,
+			};
+			if (inEdgeZone(point.x, edge)) return;
 			gesture = {
 				x: point.x,
 				y: point.y,
