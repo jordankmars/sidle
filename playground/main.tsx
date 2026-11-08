@@ -1,33 +1,9 @@
-import {
-	type KeyboardEvent,
-	type PointerEvent,
-	type RefObject,
-	StrictMode,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import {
-	createFrameLoop,
-	createSwipeGroup,
-	createSwipeMachine,
-	type Direction,
-	type Point,
-	type SwipeGroup,
-	type SwipeMachine,
-	type SwipeState,
-} from "../src/core";
+import * as Sidle from "../src/react";
 
-// Everything the playground needs lives in this file on purpose: it wires the
-// core up by hand so we can feel it out before the React adapter exists.
-
-const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-const loop = createFrameLoop({
-	request: (cb) => requestAnimationFrame(cb),
-	cancel: (handle) => cancelAnimationFrame(handle),
-});
+// The demo for the React adapter, kept in one file on purpose. Everything here
+// is what a real app would write, with the swiping left to `sidle/react`.
 
 interface Mail {
 	id: string;
@@ -71,201 +47,39 @@ const MANY: Mail[] = Array.from({ length: 200 }, (_, i) => ({
 	from: `${INBOX[i % INBOX.length].from} #${i + 1}`,
 }));
 
-const START = { width: 90, commit: true };
-const END = { width: 150, commit: true };
-
-function toPoint(e: PointerEvent): Point {
-	return { x: e.clientX, y: e.clientY, time: e.timeStamp, id: e.pointerId };
-}
-
 function Row({
 	mail,
-	group,
 	dir,
 	onFlag,
 	onRemove,
 	onOpen,
 }: {
 	mail: Mail;
-	group: SwipeGroup;
-	dir: Direction;
+	dir: Sidle.Direction;
 	onFlag: () => void;
 	onRemove: () => void;
 	onOpen: () => void;
 }) {
-	const rowRef = useRef<HTMLDivElement>(null);
-	const bodyRef = useRef<HTMLElement>(null);
-	const startRef = useRef<HTMLDivElement>(null);
-	const endRef = useRef<HTMLDivElement>(null);
-	const machineRef = useRef<SwipeMachine | null>(null);
-	const measureRef = useRef<() => void>(null);
-	const swipedRef = useRef(false);
-	const onRemoveRef = useRef(onRemove);
-	onRemoveRef.current = onRemove;
-	const dirRef = useRef(dir);
-	dirRef.current = dir;
-
-	useEffect(() => {
-		const row = rowRef.current;
-		const body = bodyRef.current;
-		const start = startRef.current;
-		const end = endRef.current;
-		if (!row || !body || !start || !end) return;
-
-		function collapse() {
-			// A row destroyed mid-commit (scrolled away, say) is already gone.
-			if (!row?.isConnected) return onRemoveRef.current();
-			const animation = row.animate(
-				[{ height: `${row.offsetHeight}px` }, { height: "0px" }],
-				{
-					duration: REDUCED_MOTION ? 1 : 220,
-					easing: "cubic-bezier(.3,0,.2,1)",
-				},
-			);
-			animation.onfinish = () => onRemoveRef.current();
-		}
-
-		const machine = createSwipeMachine({
-			reducedMotion: REDUCED_MOTION,
-			// Leave the leading screen edge to iOS swipe-back.
-			edgeGuard: 24,
-			onCommit: collapse,
-		});
-		machineRef.current = machine;
-
-		// Paint straight to the DOM. Re-rendering React every frame would be wasteful.
-		function paint({ offset, armedSide }: SwipeState) {
-			if (!body || !start || !end) return;
-			// Offsets are physical px, so flip them to find which side is showing.
-			const startward = dirRef.current === "rtl" ? -offset : offset;
-			body.style.transform = offset ? `translateX(${offset}px)` : "";
-			start.style.width = `${Math.max(0, startward)}px`;
-			end.style.width = `${Math.max(0, -startward)}px`;
-			start.classList.toggle("commit", armedSide === "start");
-			end.classList.toggle("commit", armedSide === "end");
-		}
-
-		const measure = () =>
-			machine.setLayout({
-				rowWidth: row.clientWidth,
-				dir: dirRef.current,
-				viewportWidth: window.innerWidth,
-				start: START,
-				end: END,
-			});
-		measure();
-		measureRef.current = measure;
-		const resize = new ResizeObserver(measure);
-		resize.observe(row);
-
-		const unsubscribe = machine.subscribe((state) => {
-			paint(state);
-			loop.wake();
-		});
-		const stopLoop = loop.add(machine);
-		const leaveGroup = group.register(mail.id, machine);
-
-		return () => {
-			// Settle first so a commit in flight still lands and the group sees the final state.
-			machine.destroy();
-			leaveGroup();
-			resize.disconnect();
-			unsubscribe();
-			stopLoop();
-			machineRef.current = null;
-			measureRef.current = null;
-		};
-	}, [group, mail.id]);
-
-	// Direction isn't something a ResizeObserver sees, so re-measure when it flips.
-	useEffect(() => {
-		if (dir) measureRef.current?.();
-	}, [dir]);
-
-	const machine = () => machineRef.current;
-
-	function flag() {
-		onFlag();
-		machine()?.close();
-	}
-
-	function onPointerDown(e: PointerEvent<HTMLElement>) {
-		if (e.button !== 0) return;
-		machine()?.down(toPoint(e));
-	}
-
-	function onPointerMove(e: PointerEvent<HTMLElement>) {
-		const m = machine();
-		if (!m) return;
-		const wasDragging = m.getState().phase === "dragging";
-		m.move(toPoint(e));
-		// Once the drag is ours, keep getting events even if the pointer leaves the row.
-		if (!wasDragging && m.getState().phase === "dragging") {
-			e.currentTarget.setPointerCapture(e.pointerId);
-		}
-	}
-
-	function onClick() {
-		// The click that follows a swipe isn't a tap on the row.
-		if (!swipedRef.current) onOpen();
-	}
-
-	function onKeyDown(e: KeyboardEvent) {
-		const m = machine();
-		if (!m) return;
-		if (e.key === "Delete" || e.key === "Backspace") {
-			e.preventDefault();
-			m.commit("end");
-		}
-		if (e.key === "e") m.commit("start");
-		if (e.key === "f") flag();
-		if (e.key === "Enter") onOpen();
-	}
-
 	return (
-		<div ref={rowRef} className={mail.flagged ? "row flagged" : "row"}>
-			<div ref={startRef} className="actions start">
-				<button
-					type="button"
+		<Sidle.Row
+			value={mail.id}
+			dir={dir}
+			className={mail.flagged ? "row flagged" : "row"}
+		>
+			<Sidle.Actions side="start" width={90}>
+				<Sidle.Action
 					className="action archive"
-					tabIndex={-1}
-					onClick={() => machine()?.commit("start")}
+					shortcut="e"
+					onSelect={onRemove}
+					commit
 				>
 					Archive
-				</button>
-			</div>
-			<div ref={endRef} className="actions end">
-				<button
-					type="button"
-					className="action flag"
-					tabIndex={-1}
-					onClick={flag}
-				>
-					Flag
-				</button>
-				<button
-					type="button"
-					className="action delete"
-					tabIndex={-1}
-					onClick={() => machine()?.commit("end")}
-				>
-					Delete
-				</button>
-			</div>
-			<article
-				ref={bodyRef}
+				</Sidle.Action>
+			</Sidle.Actions>
+			<Sidle.Content
 				className="body"
-				// biome-ignore lint/a11y/noNoninteractiveTabindex: rows are focusable so their shortcuts work
-				tabIndex={0}
 				aria-label={`${mail.from}: ${mail.text}. Delete to remove, E to archive, F to flag.`}
-				onPointerDown={onPointerDown}
-				onPointerMove={onPointerMove}
-				onPointerUp={(e) => {
-					swipedRef.current = machine()?.up(toPoint(e)) ?? false;
-				}}
-				onPointerCancel={() => machine()?.cancel()}
-				onClick={onClick}
-				onKeyDown={onKeyDown}
+				onClick={onOpen}
 			>
 				<b>
 					<i />
@@ -273,8 +87,21 @@ function Row({
 				</b>
 				<time>{mail.when}</time>
 				<span>{mail.text}</span>
-			</article>
-		</div>
+			</Sidle.Content>
+			<Sidle.Actions side="end" width={150}>
+				<Sidle.Action className="action flag" shortcut="f" onSelect={onFlag}>
+					Flag
+				</Sidle.Action>
+				<Sidle.Action
+					className="action delete"
+					shortcut={["Delete", "Backspace"]}
+					onSelect={onRemove}
+					commit
+				>
+					Delete
+				</Sidle.Action>
+			</Sidle.Actions>
+		</Sidle.Row>
 	);
 }
 
@@ -290,43 +117,29 @@ function useMailList(initial: Mail[]) {
 	};
 }
 
-/** One open row per list, and a tap anywhere outside the list closes it. */
-function useSwipeGroup(listRef: RefObject<HTMLElement | null>) {
-	const [group] = useState(createSwipeGroup);
-	useEffect(() => {
-		function onPointerDown(e: globalThis.PointerEvent) {
-			if (!listRef.current?.contains(e.target as Node)) group.closeAll();
-		}
-		document.addEventListener("pointerdown", onPointerDown);
-		return () => document.removeEventListener("pointerdown", onPointerDown);
-	}, [group, listRef]);
-	return group;
-}
-
 function Inbox({
 	dir,
 	onOpen,
 }: {
-	dir: Direction;
+	dir: Sidle.Direction;
 	onOpen: (from: string) => void;
 }) {
 	const { mails, remove, toggleFlag } = useMailList(INBOX);
-	const listRef = useRef<HTMLDivElement>(null);
-	const group = useSwipeGroup(listRef);
 
 	return (
-		<div ref={listRef} className="mail">
-			{mails.map((mail) => (
-				<Row
-					key={mail.id}
-					mail={mail}
-					group={group}
-					dir={dir}
-					onFlag={() => toggleFlag(mail.id)}
-					onRemove={() => remove(mail.id)}
-					onOpen={() => onOpen(mail.from)}
-				/>
-			))}
+		<div className="mail">
+			<Sidle.Group>
+				{mails.map((mail) => (
+					<Row
+						key={mail.id}
+						mail={mail}
+						dir={dir}
+						onFlag={() => toggleFlag(mail.id)}
+						onRemove={() => remove(mail.id)}
+						onOpen={() => onOpen(mail.from)}
+					/>
+				))}
+			</Sidle.Group>
 		</div>
 	);
 }
@@ -342,12 +155,11 @@ function WindowedList({
 	dir,
 	onOpen,
 }: {
-	dir: Direction;
+	dir: Sidle.Direction;
 	onOpen: (from: string) => void;
 }) {
 	const { mails, remove, toggleFlag } = useMailList(MANY);
 	const listRef = useRef<HTMLDivElement>(null);
-	const group = useSwipeGroup(listRef);
 	const [scrollTop, setScrollTop] = useState(0);
 	const [height, setHeight] = useState(320);
 
@@ -372,17 +184,18 @@ function WindowedList({
 			onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
 		>
 			<div style={{ height: first * ROW_HEIGHT }} />
-			{mails.slice(first, last).map((mail) => (
-				<Row
-					key={mail.id}
-					mail={mail}
-					group={group}
-					dir={dir}
-					onFlag={() => toggleFlag(mail.id)}
-					onRemove={() => remove(mail.id)}
-					onOpen={() => onOpen(mail.from)}
-				/>
-			))}
+			<Sidle.Group>
+				{mails.slice(first, last).map((mail) => (
+					<Row
+						key={mail.id}
+						mail={mail}
+						dir={dir}
+						onFlag={() => toggleFlag(mail.id)}
+						onRemove={() => remove(mail.id)}
+						onOpen={() => onOpen(mail.from)}
+					/>
+				))}
+			</Sidle.Group>
 			<div style={{ height: (mails.length - last) * ROW_HEIGHT }} />
 		</div>
 	);
@@ -390,7 +203,7 @@ function WindowedList({
 
 function App() {
 	const [inbox, setInbox] = useState(0);
-	const [dir, setDir] = useState<Direction>("ltr");
+	const [dir, setDir] = useState<Sidle.Direction>("ltr");
 	const [opened, setOpened] = useState<string | null>(null);
 	return (
 		<main>
@@ -470,11 +283,10 @@ footer { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .opened { font-size: 12.5px; color: var(--muted); }
 
 .mail { width: min(100%, 380px); background: var(--surface); border-radius: 12px; overflow: hidden; }
-.row { position: relative; overflow: hidden; }
 .row + .row .body { border-top: 1px solid var(--line); }
 .body {
-	position: relative; z-index: 1; background: var(--surface); display: grid; grid-template-columns: 1fr auto;
-	column-gap: 10px; padding: 10px 14px; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab;
+	background: var(--surface); display: grid; grid-template-columns: 1fr auto;
+	column-gap: 10px; padding: 10px 14px; cursor: grab;
 }
 .body b { font-weight: 500; font-size: 13.5px; display: flex; align-items: center; gap: 6px; }
 .body b i { width: 7px; height: 7px; border-radius: 4px; background: var(--warn); display: none; }
@@ -483,17 +295,10 @@ footer { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .body span { grid-column: 1 / -1; color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .windowed { height: 320px; overflow-y: auto; overscroll-behavior: contain; }
 .windowed .body { height: ${ROW_HEIGHT}px; }
-.actions { position: absolute; top: 0; bottom: 0; display: flex; overflow: hidden; width: 0; }
-.actions.start { inset-inline-start: 0; }
-.actions.end { inset-inline-end: 0; }
-.action {
-	flex: 1 1 0; min-width: 0; color: #fff; font-weight: 500; font-size: 12.5px; white-space: nowrap;
-	overflow: hidden; transition: flex-grow .2s ease;
-}
+.action { color: #fff; font-weight: 500; font-size: 12.5px; }
 .archive { background: var(--ok); }
 .flag { background: var(--warn); }
 .delete { background: var(--bad); }
-.actions.commit .flag { flex-grow: 0.0001; }
 `;
 
 const root = document.getElementById("root");
