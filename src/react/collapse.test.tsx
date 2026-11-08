@@ -94,6 +94,29 @@ describe("collapsing after a commit", () => {
 		expect(onSelect).toHaveBeenCalledOnce();
 	});
 
+	it("gives the row its height back when the element is reused", () => {
+		// What a list keyed by index does: the next item takes over the element.
+		const tree = (value: string) => (
+			<Row value={value} data-testid="row">
+				<Content data-testid="content">{value}</Content>
+				<Actions side="end">
+					<Action onSelect={() => {}} commit>
+						Delete
+					</Action>
+				</Actions>
+			</Row>
+		);
+		const { rerender } = render(tree("a"));
+		fullSwipe();
+		flushFrames();
+		finishCollapse();
+		expect(runningAnimations()[0].cancelled).toBe(false);
+		rerender(tree("b"));
+		expect(runningAnimations()[0].cancelled).toBe(true);
+		expect(screen.getByTestId("row").dataset.phase).toBe("idle");
+		expect(content().style.transform).toBe("");
+	});
+
 	it("removes the row when the action takes it out of the list", () => {
 		render(<RemovableList />);
 		fullSwipe();

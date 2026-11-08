@@ -10,6 +10,8 @@ interface FakeAnimation {
 	element: Element;
 	options: KeyframeAnimationOptions;
 	onfinish: (() => void) | null;
+	cancelled: boolean;
+	cancel(): void;
 }
 
 const fakes = globalThis as unknown as {
@@ -54,6 +56,10 @@ Element.prototype.animate = function animate(
 		element: this,
 		options: typeof options === "object" ? options : {},
 		onfinish: null,
+		cancelled: false,
+		cancel() {
+			animation.cancelled = true;
+		},
 	};
 	fakes.sidleAnimations.push(animation);
 	return animation as unknown as Animation;

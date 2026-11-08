@@ -4,7 +4,8 @@ const EASING = "cubic-bezier(.3,0,.2,1)";
 /**
  * Shrink a row to nothing, then call `done`. The row stays collapsed afterwards
  * so it can't flash back in the gap before React removes it. Returns a function
- * that calls `done` right away, for when the row is unmounted part way through.
+ * for when the row is disconnected: it calls `done` if that hasn't happened yet
+ * and gives the row its height back, in case React reuses the element.
  */
 export function collapseRow(
 	row: HTMLElement,
@@ -27,5 +28,8 @@ export function collapseRow(
 		},
 	);
 	animation.onfinish = finish;
-	return finish;
+	return () => {
+		finish();
+		animation.cancel();
+	};
 }
