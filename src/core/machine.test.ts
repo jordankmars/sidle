@@ -188,7 +188,7 @@ describe("createSwipeMachine", () => {
 			release(m, -260);
 			expect(m.getState()).toMatchObject({
 				phase: "committing",
-				armedSide: null,
+				armedSide: "end",
 			});
 			expect(commits).toEqual([]);
 			settle(m);
@@ -204,7 +204,10 @@ describe("createSwipeMachine", () => {
 			const m = setupCommit((side) => commits.push(side));
 			m.commit("start");
 			settle(m);
-			expect(m.getState().offset).toBe(W + 20);
+			expect(m.getState()).toMatchObject({
+				offset: W + 20,
+				armedSide: "start",
+			});
 			expect(commits).toEqual(["start"]);
 		});
 

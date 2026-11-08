@@ -38,7 +38,7 @@ export interface SwipeState {
 	offset: number;
 	/** The side the row is open to, or heading to. */
 	openSide: Side | null;
-	/** The side whose main action commits if released now. */
+	/** The side whose main action commits if released now, or is committing. */
 	armedSide: Side | null;
 }
 
@@ -146,15 +146,16 @@ export function createSwipeMachine(
 
 	/** Spring to an offset, optionally carrying a release velocity. */
 	function settle(to: number, openSide: Side | null, velocity?: number) {
+		const armed = committedSide;
 		spring = { x: spring.x, v: velocity ?? spring.v, to };
 		if (reducedMotion || isSpringAtRest(spring, springConfig)) {
 			spring = createSpring(to);
-			arrive({ openSide, armedSide: null });
+			arrive({ openSide, armedSide: armed });
 			return;
 		}
 		animating = true;
 		const moving = committedSide ? "committing" : "settling";
-		emit({ phase: gesture ? "pending" : moving, openSide, armedSide: null });
+		emit({ phase: gesture ? "pending" : moving, openSide, armedSide: armed });
 	}
 
 	function commit(side: Side, velocity?: number) {
