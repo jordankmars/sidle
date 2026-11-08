@@ -1,6 +1,6 @@
 import { detectAxis } from "./axis";
 import { rubber } from "./math";
-import { resolveRelease } from "./release";
+import { armedSide, resolveRelease } from "./release";
 import type { Side, SideConfig, Sides, Sign } from "./sides";
 import {
 	createSpring,
@@ -26,7 +26,11 @@ export type Phase =
 	/** Following a horizontal drag. */
 	| "dragging"
 	/** Springing towards open or closed. */
-	| "settling";
+	| "settling"
+	/** Sliding off-screen after a full swipe or a call to `commit`. */
+	| "committing"
+	/** Off-screen and finished. The row is ready to be collapsed and removed. */
+	| "committed";
 
 export interface SwipeState {
 	phase: Phase;
@@ -34,6 +38,8 @@ export interface SwipeState {
 	offset: number;
 	/** The side the row is open to, or heading to. */
 	openSide: Side | null;
+	/** The side whose main action commits if released now. */
+	armedSide: Side | null;
 }
 
 export interface SwipeLayout {
@@ -47,6 +53,8 @@ export interface SwipeMachineOptions {
 	spring?: Partial<SpringConfig>;
 	/** Jump straight to targets instead of animating. */
 	reducedMotion?: boolean;
+	/** Called once the row has finished sliding off-screen. */
+	onCommit?: (side: Side) => void;
 }
 
 export interface SwipeMachine {
@@ -59,6 +67,8 @@ export interface SwipeMachine {
 	tick(dt: number): void;
 	open(side: Side): void;
 	close(): void;
+	/** Slide the row off-screen and commit that side's main action. */
+	commit(side: Side): void;
 	setLayout(layout: SwipeLayout): void;
 	getState(): SwipeState;
 	subscribe(listener: (state: SwipeState) => void): () => void;
@@ -74,6 +84,8 @@ export const DEFAULT_SPRING: SpringConfig = {
 
 /** Rubber-band limit past the furthest a side can travel. */
 const OVERSCROLL = 40;
+/** Extra distance past the row edge a committed row travels, so it fully clears. */
+const COMMIT_OVERSHOOT = 20;
 const START_SIGN: Sign = 1;
 
 interface Gesture {
@@ -95,7 +107,13 @@ export function createSwipeMachine(
 	let spring: SpringState = createSpring(0);
 	let animating = false;
 	let gesture: Gesture | null = null;
-	let state: SwipeState = { phase: "idle", offset: 0, openSide: null };
+	let committedSide: Side | null = null;
+	let state: SwipeState = {
+		phase: "idle",
+		offset: 0,
+		openSide: null,
+		armedSide: null,
+	};
 
 	const signOf = (side: Side): Sign =>
 		(side === "start" ? START_SIGN : -START_SIGN) as Sign;
@@ -106,7 +124,8 @@ export function createSwipeMachine(
 		if (
 			next.phase === state.phase &&
 			next.offset === state.offset &&
-			next.openSide === state.openSide
+			next.openSide === state.openSide &&
+			next.armedSide === state.armedSide
 		) {
 			return;
 		}
@@ -114,8 +133,15 @@ export function createSwipeMachine(
 		for (const listener of listeners) listener(state);
 	}
 
-	function restingPhase(): Phase {
-		return gesture ? "pending" : "idle";
+	/** The spring has reached its target. */
+	function arrive(patch: Partial<SwipeState> = {}) {
+		animating = false;
+		if (committedSide) {
+			emit({ ...patch, phase: "committed", offset: spring.x });
+			options.onCommit?.(committedSide);
+			return;
+		}
+		emit({ ...patch, phase: gesture ? "pending" : "idle", offset: spring.x });
 	}
 
 	/** Spring to an offset, optionally carrying a release velocity. */
@@ -123,12 +149,20 @@ export function createSwipeMachine(
 		spring = { x: spring.x, v: velocity ?? spring.v, to };
 		if (reducedMotion || isSpringAtRest(spring, springConfig)) {
 			spring = createSpring(to);
-			animating = false;
-			emit({ phase: restingPhase(), offset: to, openSide });
+			arrive({ openSide, armedSide: null });
 			return;
 		}
 		animating = true;
-		emit({ phase: gesture ? "pending" : "settling", openSide });
+		const moving = committedSide ? "committing" : "settling";
+		emit({ phase: gesture ? "pending" : moving, openSide, armedSide: null });
+	}
+
+	function commit(side: Side, velocity?: number) {
+		if (!layout[side]?.commit || committedSide) return;
+		committedSide = side;
+		gesture = null;
+		const to = signOf(side) * (layout.rowWidth + COMMIT_OVERSHOOT);
+		settle(to, side, velocity);
 	}
 
 	/** How far a drag can go towards a side before rubber-banding. */
@@ -147,6 +181,7 @@ export function createSwipeMachine(
 
 	return {
 		down(point) {
+			if (committedSide) return;
 			gesture = {
 				x: point.x,
 				y: point.y,
@@ -177,7 +212,16 @@ export function createSwipeMachine(
 			spring = { x: offset, v: 0, to: spring.to };
 			animating = false;
 			tracker.add(offset, point.time);
-			emit({ phase: "dragging", offset });
+			emit({
+				phase: "dragging",
+				offset,
+				armedSide: armedSide({
+					offset,
+					rowWidth: layout.rowWidth,
+					sides: sides(),
+					startSign: START_SIGN,
+				}),
+			});
 		},
 
 		up() {
@@ -202,6 +246,8 @@ export function createSwipeMachine(
 			});
 			if (release.type === "close") {
 				settle(0, null, velocity);
+			} else if (release.type === "commit") {
+				commit(release.side, velocity);
 			} else {
 				const config = layout[release.side];
 				if (config)
@@ -219,8 +265,7 @@ export function createSwipeMachine(
 			if (!animating) return;
 			spring = stepSpring(spring, springConfig, dt);
 			if (spring.x === spring.to && spring.v === 0) {
-				animating = false;
-				emit({ phase: restingPhase(), offset: spring.x });
+				arrive();
 			} else {
 				emit({ offset: spring.x });
 			}
@@ -228,19 +273,23 @@ export function createSwipeMachine(
 
 		open(side) {
 			const config = layout[side];
-			if (!config || gesture?.axis === "x") return;
+			if (!config || committedSide || gesture?.axis === "x") return;
 			settle(signOf(side) * config.width, side);
 		},
 
 		close() {
-			if (gesture?.axis === "x") return;
+			if (committedSide || gesture?.axis === "x") return;
 			settle(0, null);
+		},
+
+		commit(side) {
+			commit(side);
 		},
 
 		setLayout(next) {
 			layout = next;
 			// Keep an open row pinned to its side if the action widths change.
-			if (!gesture && !animating && state.openSide) {
+			if (!gesture && !animating && !committedSide && state.openSide) {
 				const config = layout[state.openSide];
 				const to = config ? signOf(state.openSide) * config.width : 0;
 				spring = createSpring(to);

@@ -7,6 +7,11 @@ const layout = {
 	start: { width: 90 },
 	end: { width: 150 },
 };
+const committable = {
+	rowWidth: W,
+	start: { width: 90, commit: true },
+	end: { width: 150, commit: true },
+};
 
 function setup(options?: Parameters<typeof createSwipeMachine>[0]) {
 	const m = createSwipeMachine(options);
@@ -39,6 +44,7 @@ describe("createSwipeMachine", () => {
 			phase: "idle",
 			offset: 0,
 			openSide: null,
+			armedSide: null,
 		});
 	});
 
@@ -68,6 +74,7 @@ describe("createSwipeMachine", () => {
 			phase: "idle",
 			offset: -150,
 			openSide: "end",
+			armedSide: null,
 		});
 	});
 
@@ -152,5 +159,84 @@ describe("createSwipeMachine", () => {
 		settle(m);
 		m.setLayout({ ...layout, end: { width: 200 } });
 		expect(m.getState()).toMatchObject({ offset: -200, openSide: "end" });
+	});
+
+	describe("full-swipe commit", () => {
+		function setupCommit(onCommit?: (side: string) => void) {
+			const m = createSwipeMachine({ onCommit });
+			m.setLayout(committable);
+			return m;
+		}
+
+		it("lets a committable side travel the full row width", () => {
+			const m = setupCommit();
+			drag(m, -300);
+			expect(m.getState().offset).toBe(-300);
+		});
+
+		it("arms past 60% of the row and disarms coming back", () => {
+			const m = setupCommit();
+			drag(m, -240);
+			expect(m.getState().armedSide).toBe("end");
+			m.move({ x: 100, y: 100, time: 400 });
+			expect(m.getState().armedSide).toBeNull();
+		});
+
+		it("slides off-screen and fires onCommit once it lands", () => {
+			const commits: string[] = [];
+			const m = setupCommit((side) => commits.push(side));
+			release(m, -260);
+			expect(m.getState()).toMatchObject({
+				phase: "committing",
+				armedSide: null,
+			});
+			expect(commits).toEqual([]);
+			settle(m);
+			expect(m.getState()).toMatchObject({
+				phase: "committed",
+				offset: -(W + 20),
+			});
+			expect(commits).toEqual(["end"]);
+		});
+
+		it("commits from the keyboard without a drag", () => {
+			const commits: string[] = [];
+			const m = setupCommit((side) => commits.push(side));
+			m.commit("start");
+			settle(m);
+			expect(m.getState().offset).toBe(W + 20);
+			expect(commits).toEqual(["start"]);
+		});
+
+		it("ignores input once committed", () => {
+			const commits: string[] = [];
+			const m = setupCommit((side) => commits.push(side));
+			m.commit("end");
+			m.commit("start");
+			m.open("start");
+			m.close();
+			drag(m, 200);
+			settle(m);
+			expect(m.getState().phase).toBe("committed");
+			expect(commits).toEqual(["end"]);
+		});
+
+		it("does nothing for a side without a commit action", () => {
+			const m = setup();
+			m.commit("end");
+			expect(m.getState()).toMatchObject({ phase: "idle", offset: 0 });
+		});
+
+		it("commits immediately with reduced motion", () => {
+			const commits: string[] = [];
+			const m = createSwipeMachine({
+				reducedMotion: true,
+				onCommit: (side) => commits.push(side),
+			});
+			m.setLayout(committable);
+			m.commit("end");
+			expect(m.getState().phase).toBe("committed");
+			expect(commits).toEqual(["end"]);
+		});
 	});
 });
