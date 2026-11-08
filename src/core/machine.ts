@@ -348,12 +348,28 @@ export function createSwipeMachine(
 
 		setLayout(next) {
 			layout = next;
+			if (committedSide) {
+				if (animating) {
+					const to = offsetFor(
+						committedSide,
+						layout.rowWidth + COMMIT_OVERSHOOT,
+					);
+					spring = { ...spring, to };
+				}
+				return;
+			}
+			if (!state.openSide) return;
+
 			// Keep an open row pinned to its side if the action widths change.
-			if (!gesture && !animating && !committedSide && state.openSide) {
-				const config = layout[state.openSide];
-				const to = config ? offsetFor(state.openSide, config.width) : 0;
+			const config = layout[state.openSide];
+			const to = config ? offsetFor(state.openSide, config.width) : 0;
+			const openSide = config ? state.openSide : null;
+			if (animating) {
+				spring = { ...spring, to };
+				emit({ openSide });
+			} else if (!gesture) {
 				spring = createSpring(to);
-				emit({ offset: to, openSide: config ? state.openSide : null });
+				emit({ offset: to, openSide });
 			}
 		},
 

@@ -267,6 +267,36 @@ describe("createSwipeMachine", () => {
 		});
 	});
 
+	describe("layout changes mid-animation", () => {
+		it("sends a settling row to the new open width", () => {
+			const m = setup();
+			release(m, -120);
+			expect(m.needsFrame).toBe(true);
+			m.setLayout({ ...layout, end: { width: 200 } });
+			settle(m);
+			expect(m.getState()).toMatchObject({ offset: -200, openSide: "end" });
+		});
+
+		it("closes a settling row whose side has gone away", () => {
+			const m = setup();
+			release(m, -120);
+			m.setLayout({ rowWidth: W, start: { width: 90 } });
+			expect(m.getState().openSide).toBeNull();
+			settle(m);
+			expect(m.getState()).toMatchObject({ phase: "idle", offset: 0 });
+		});
+
+		it("clears the new row width while committing", () => {
+			const m = setup();
+			m.setLayout(committable);
+			m.commit("end");
+			m.tick(1 / 60);
+			m.setLayout({ ...committable, rowWidth: 500 });
+			settle(m);
+			expect(m.getState()).toMatchObject({ phase: "committed", offset: -520 });
+		});
+	});
+
 	describe("edge guard", () => {
 		it("ignores drags that start at the leading screen edge", () => {
 			const m = createSwipeMachine({ edgeGuard: 24 });
