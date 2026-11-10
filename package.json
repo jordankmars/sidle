@@ -36,7 +36,9 @@
 		"typecheck": "tsc --noEmit",
 		"prepack": "pnpm build",
 		"lint": "biome check .",
-		"format": "biome check --write ."
+		"format": "biome check --write .",
+		"site:dev": "pnpm build && pnpm --filter site dev",
+		"site:build": "pnpm build && pnpm --filter site build"
 	},
 	"peerDependencies": {
 		"react": ">=18"
