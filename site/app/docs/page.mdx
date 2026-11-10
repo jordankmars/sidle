@@ -1,0 +1,23 @@
+export const metadata = { title: "Hello World" };
+
+# Hello World
+
+Welcome to the sidle docs. sidle gives list rows iOS Mail-style swipe actions: swipe partway to reveal a row's actions, or all the way to commit the main one.
+
+There's more to come. For now, here's a row with an action on each side:
+
+```tsx
+import * as Sidle from "sidle/react";
+
+<Sidle.Row value={mail.id}>
+	<Sidle.Actions side="start">
+		<Sidle.Action onSelect={archive}>Archive</Sidle.Action>
+	</Sidle.Actions>
+	<Sidle.Content onClick={open}>…row…</Sidle.Content>
+	<Sidle.Actions side="end">
+		<Sidle.Action onSelect={remove} commit>
+			Delete
+		</Sidle.Action>
+	</Sidle.Actions>
+</Sidle.Row>;
+```
