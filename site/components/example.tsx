@@ -2,13 +2,17 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { highlight } from "@/lib/highlight";
 import { ExampleTabs } from "./example-tabs";
+import { Chats } from "./examples/chats";
+import { Groups } from "./examples/groups";
 import { Inbox } from "./examples/inbox";
 import { Keyboard } from "./examples/keyboard";
+import { Rtl } from "./examples/rtl";
 import { StyleBrutalist } from "./examples/style-brutalist";
 import { StyleGlass } from "./examples/style-glass";
 import { StyleSite } from "./examples/style-site";
 import { StyleSoft } from "./examples/style-soft";
 import { StyleTerminal } from "./examples/style-terminal";
+import { Tasks } from "./examples/tasks";
 
 const DEMOS = {
 	inbox: Inbox,
@@ -18,6 +22,10 @@ const DEMOS = {
 	"style-brutalist": StyleBrutalist,
 	"style-terminal": StyleTerminal,
 	"style-soft": StyleSoft,
+	tasks: Tasks,
+	chats: Chats,
+	groups: Groups,
+	rtl: Rtl,
 };
 
 /** Runs `components/examples/<name>.tsx` and shows that same file as its code. */
