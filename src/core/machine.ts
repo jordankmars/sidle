@@ -71,6 +71,8 @@ export interface SwipeMachineOptions {
 	 * the iOS swipe-back gesture wins. Off by default.
 	 */
 	edgeGuard?: number;
+	/** Seconds of release speed that count towards a commit. 0 goes by distance alone. */
+	commitMomentum?: number;
 	/** Start open, e.g. when a virtualized row scrolls back into view. */
 	initial?: SwipeSnapshot;
 	/** Called once the row has finished sliding off-screen. */
@@ -300,6 +302,7 @@ export function createSwipeMachine(
 				rowWidth: layout.rowWidth,
 				sides: sides(),
 				dir: layout.dir,
+				commitMomentum: options.commitMomentum,
 			});
 			if (release.type === "close") {
 				settle(0, null, velocity);

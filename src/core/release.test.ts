@@ -67,6 +67,54 @@ describe("resolveRelease", () => {
 		).toEqual({ type: "commit", side: "start" });
 	});
 
+	it("commits a fast flick that's past the side's width", () => {
+		expect(
+			resolveRelease({ offset: -160, velocity: -2000, rowWidth: W, sides }),
+		).toEqual({ type: "commit", side: "end" });
+	});
+
+	it("only opens a fast flick short of the side's width", () => {
+		expect(
+			resolveRelease({ offset: -100, velocity: -4000, rowWidth: W, sides }),
+		).toEqual({ type: "open", side: "end" });
+	});
+
+	it("only opens a slower swipe short of the threshold", () => {
+		expect(
+			resolveRelease({ offset: -160, velocity: -500, rowWidth: W, sides }),
+		).toEqual({ type: "open", side: "end" });
+	});
+
+	it("doesn't commit a row flicked hard the other way", () => {
+		expect(
+			resolveRelease({ offset: -160, velocity: 9000, rowWidth: W, sides }),
+		).toEqual({ type: "open", side: "start" });
+	});
+
+	it("goes by distance alone with no commit momentum", () => {
+		expect(
+			resolveRelease({
+				offset: -160,
+				velocity: -2000,
+				rowWidth: W,
+				sides,
+				commitMomentum: 0,
+			}),
+		).toEqual({ type: "open", side: "end" });
+	});
+
+	it("commits a slower flick with more commit momentum", () => {
+		expect(
+			resolveRelease({
+				offset: -160,
+				velocity: -500,
+				rowWidth: W,
+				sides,
+				commitMomentum: 0.2,
+			}),
+		).toEqual({ type: "commit", side: "end" });
+	});
+
 	it("closes towards a side that has no actions", () => {
 		expect(
 			resolveRelease({
