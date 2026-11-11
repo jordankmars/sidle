@@ -11,6 +11,7 @@ export const SECTIONS = [
 		pages: [
 			{ title: "Actions", href: "/docs/actions" },
 			{ title: "Keyboard", href: "/docs/keyboard" },
+			{ title: "Styling", href: "/docs/styling" },
 		],
 	},
 ];

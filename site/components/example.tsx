@@ -4,10 +4,20 @@ import { highlight } from "@/lib/highlight";
 import { ExampleTabs } from "./example-tabs";
 import { Inbox } from "./examples/inbox";
 import { Keyboard } from "./examples/keyboard";
+import { StyleBrutalist } from "./examples/style-brutalist";
+import { StyleGlass } from "./examples/style-glass";
+import { StyleSite } from "./examples/style-site";
+import { StyleSoft } from "./examples/style-soft";
+import { StyleTerminal } from "./examples/style-terminal";
 
 const DEMOS = {
 	inbox: Inbox,
 	keyboard: Keyboard,
+	"style-site": StyleSite,
+	"style-glass": StyleGlass,
+	"style-brutalist": StyleBrutalist,
+	"style-terminal": StyleTerminal,
+	"style-soft": StyleSoft,
 };
 
 /** Runs `components/examples/<name>.tsx` and shows that same file as its code. */
