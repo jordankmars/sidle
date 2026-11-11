@@ -1,0 +1,39 @@
+import { Example } from "@/components/example";
+
+export const metadata = { title: "Lists" };
+
+# Lists
+
+<Lead>Rows for the lists people actually swipe through.</Lead>
+
+Each one is a `Sidle.Row` per item, with a different choice of actions.
+
+## Inbox
+
+An action on each side, and a commit on both. Flag runs and closes the row, Archive and Delete take it away.
+
+<Example name="inbox" />
+
+## Tasks
+
+A single side and a single action. There's nothing to reveal on the other side, so the row only gives a little that way.
+
+<Example name="tasks" />
+
+## Chats
+
+No `commit` anywhere. A full swipe stops at the panel, and the rows stay in the list.
+
+<Example name="chats" />
+
+## Separate groups
+
+Wrap a list in `Sidle.Group` and it keeps its own open row. Open one in each list below.
+
+<Example name="groups" />
+
+## Right to left
+
+Sides follow the writing direction, so `start` is on the right here. It's read from the DOM, or set it with `dir`.
+
+<Example name="rtl" />

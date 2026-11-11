@@ -1,0 +1,98 @@
+export const metadata = { title: "API" };
+
+# API
+
+<Lead>The parts of sidle and the props they take.</Lead>
+
+## Anatomy
+
+Import `Sidle` and put the parts together.
+
+```tsx
+import * as Sidle from "sidle/react";
+
+<Sidle.Group>
+	<Sidle.Row>
+		<Sidle.Actions side="start">
+			<Sidle.Action />
+		</Sidle.Actions>
+		<Sidle.Content />
+		<Sidle.Actions side="end">
+			<Sidle.Action />
+		</Sidle.Actions>
+	</Sidle.Row>
+</Sidle.Group>;
+```
+
+## Components
+
+### Group
+
+Keeps one row open among the rows inside it, separately from the rest of the page. It renders nothing of its own, and it's optional: rows outside a `Group` share one group for the whole page.
+
+### Row
+
+Holds the state. Takes div props.
+
+| Prop | Type | Default |
+| --- | --- | --- |
+| `value` | `string` | Generated |
+| `dir` | `"ltr" \| "rtl"` | Read from the DOM |
+| `edgeGuard` | `number` | `24` |
+| `commitMomentum` | `number` | `0.05` |
+
+`value` identifies the row in its group, so keep it unique there. In a virtualized list, pass something stable, and a row that scrolls away open comes back open.
+
+`edgeGuard` ignores swipes starting this many pixels from the leading screen edge, leaving them to the iOS back gesture. `0` turns it off.
+
+`commitMomentum` is how many seconds of release speed count towards a full swipe. Raise it and a flick commits sooner, or set `0` to go by distance alone.
+
+### Content
+
+The part that moves. Takes div props, and takes focus so the keyboard works. See [Keyboard](/docs/keyboard).
+
+### Actions
+
+The panel on one side of the row. Takes div props.
+
+| Prop | Type | Default |
+| --- | --- | --- |
+| `side` | `"start" \| "end"` | Required |
+| `width` | `number` | 75 per action |
+
+`side` follows the writing direction, so `start` is on the right in a right-to-left layout. `width` is how far the row opens.
+
+### Action
+
+A button in the panel. Takes button props.
+
+| Prop | Type | Default |
+| --- | --- | --- |
+| `onSelect` | `() => void` | Required |
+| `commit` | `boolean` | `false` |
+| `shortcut` | `string \| string[]` | - |
+
+A `commit` action is the one a full swipe runs. See [Actions](/docs/actions).
+
+## Data attributes
+
+| Attribute | On | Value |
+| --- | --- | --- |
+| `data-phase` | `Row` | `idle`, `pending`, `dragging`, `settling`, `committing`, `committed` |
+| `data-open-side` | `Row` | `start` or `end`, when open |
+| `data-side` | `Actions` | `start` or `end` |
+| `data-armed` | `Actions` | Present when letting go would commit |
+| `data-commit` | `Action` | Present on a commit action |
+
+## Gestures
+
+A horizontal drag moves the row, and a vertical one still scrolls the page. Letting go past half of a panel's width opens it, and a quick flick counts for more than its distance. Past 60% of the row's width, letting go commits, and a fast flick gets there sooner once it's past the panel.
+
+Tapping outside every row closes whichever is open. A press on another row closes the open one and does nothing else.
+
+## Good to know
+
+- Every part forwards its ref.
+- Rows are `overflow: hidden`, so a rounded `Row` clips its actions too.
+- `Content` sets `touch-action: pan-y` and turns off text selection, so a swipe doesn't start one.
+- With reduced motion, rows jump to where they're going.

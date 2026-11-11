@@ -1,0 +1,51 @@
+import { ActionsExample } from "@/components/actions-example";
+
+export const metadata = { title: "Actions" };
+
+# Actions
+
+<Lead>Choose what a swipe reveals and what a full swipe does.</Lead>
+
+Pick a `side`, turn `commit` on or off, and swipe the row.
+
+<ActionsExample />
+
+## How it works
+
+A row can have `Sidle.Actions` on either side, or both. Swipe partway and the row opens to show them. Tapping an action runs its `onSelect` and closes the row.
+
+```tsx
+<Sidle.Actions side="end">
+	<Sidle.Action onSelect={flag}>Flag</Sidle.Action>
+</Sidle.Actions>
+```
+
+Without a `commit` action, that's as far as the row goes.
+
+## Commit actions
+
+Mark an action `commit` and a full swipe runs it. Past 60% of the row's width it fills the row, and letting go slides the row away and collapses it. A fast flick commits sooner, once it's past the panel. Tapping the action does the same.
+
+```tsx
+<Sidle.Action onSelect={remove} commit>
+	Delete
+</Sidle.Action>
+```
+
+Tune how much a flick helps with `commitMomentum`.
+
+```tsx
+<Sidle.Row commitMomentum={0.1}>{/* ... */}</Sidle.Row>
+```
+
+`onSelect` fires after the collapse, so it's the right moment to take the row out of your list. A commit can't be undone by the row: if `onSelect` doesn't remove it, it stays collapsed at zero height.
+
+With more than one `commit` action on a side, a full swipe runs the last one.
+
+## Width
+
+A panel opens to 75px per action. Set `width` when your labels need more or less, and the actions share it evenly.
+
+```tsx
+<Sidle.Actions side="end" width={150}>{/* ... */}</Sidle.Actions>
+```

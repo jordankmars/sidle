@@ -1,0 +1,40 @@
+import { Example } from "@/components/example";
+
+export const metadata = { title: "Keyboard" };
+
+# Keyboard
+
+<Lead>Everything a swipe does, without a pointer.</Lead>
+
+Tab to a row below, then press `F` to flag it, `Delete` to remove it, or the left arrow to reveal its actions.
+
+<Example name="keyboard" />
+
+## Keys
+
+These work while a row's `Sidle.Content` has focus.
+
+| Key | Does |
+| --- | --- |
+| An action's `shortcut` | Runs that action |
+| Left and right arrows | Reveals a side, or closes the open one |
+| Escape | Closes the row |
+| Enter | Clicks `Sidle.Content` |
+
+Once a side is revealed, its buttons can be tabbed to. Escape from a button closes the row and puts focus back on `Sidle.Content`.
+
+## Shortcuts
+
+Give an action a key, or an array of keys. They're matched without regard to case.
+
+```tsx
+<Sidle.Action shortcut={["Delete", "Backspace"]} onSelect={remove} commit>
+	Delete
+</Sidle.Action>
+```
+
+Holding a key doesn't run the action again, and presses with Ctrl, Cmd or Alt are left to the browser. The keys are published on `aria-keyshortcuts`, but say what they do in an `aria-label` too.
+
+## Focus
+
+When a commit removes the focused row, focus moves to the next row, or the previous one if it was the last.
