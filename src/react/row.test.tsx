@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { createEvent, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { Action, Actions, Content, Row } from "./index";
@@ -269,6 +269,44 @@ describe("Row and Content", () => {
 				buttons: 1,
 			});
 			expect(content().style.transform).toMatch(/^translateX\(-/);
+		});
+
+		describe("commitMomentum", () => {
+			function flick(momentum?: number) {
+				render(
+					<Row data-testid="row" commitMomentum={momentum}>
+						<Content data-testid="content">Hello</Content>
+						<Actions side="end">
+							<Action onSelect={onSelect} commit>
+								Delete
+							</Action>
+						</Actions>
+					</Row>,
+				);
+				press(content(), 250);
+				for (const [x, timeStamp] of [
+					[200, 1000],
+					[130, 1030],
+				]) {
+					const event = createEvent.pointerMove(content(), {
+						clientX: x,
+						clientY: 10,
+						pointerId: 1,
+					});
+					Object.defineProperty(event, "timeStamp", { value: timeStamp });
+					fireEvent(content(), event);
+				}
+				release(content(), 130);
+				return screen.getByTestId("row");
+			}
+
+			it("commits a fast flick early by default", () => {
+				expect(flick().dataset.phase).toBe("committing");
+			});
+
+			it("goes by distance alone at 0", () => {
+				expect(flick(0).dataset.openSide).toBe("end");
+			});
 		});
 
 		it("stops following once the pointer is released", () => {

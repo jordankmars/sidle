@@ -22,6 +22,7 @@ export interface ConnectOptions {
 	id: string;
 	group: GroupController;
 	edgeGuard: number;
+	commitMomentum: number | undefined;
 }
 
 /** One `Action`. Fields are kept current by the component. */
@@ -247,7 +248,7 @@ export function createRowController(): RowController {
 	}
 
 	return {
-		connect({ row, id, group, edgeGuard }) {
+		connect({ row, id, group, edgeGuard, commitMomentum }) {
 			rowElement = row;
 			closeOthers = () => group.closeOthers(row, id);
 			let disposing = false;
@@ -256,6 +257,7 @@ export function createRowController(): RowController {
 			const current = createSwipeMachine({
 				reducedMotion,
 				edgeGuard,
+				commitMomentum,
 				onCommit(side) {
 					const action = chosenCommit ?? mainAction(side);
 					chosenCommit = undefined;
