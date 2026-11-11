@@ -22,10 +22,12 @@ export function ExampleTabs({
 	view,
 	html,
 	code,
+	reset = true,
 }: {
 	view: ReactNode;
 	html: string;
 	code: string;
+	reset?: boolean;
 }) {
 	const [tab, setTab] = useState<Tab>("View");
 	const [round, setRound] = useState(0);
@@ -84,13 +86,15 @@ export function ExampleTabs({
 				{tab === "View" ? (
 					<div className="relative grid min-h-80 place-items-center p-8 max-sm:pb-12">
 						<Sidle.Group key={round}>{view}</Sidle.Group>
-						<button
-							type="button"
-							onClick={() => setRound((n) => n + 1)}
-							className="absolute right-3 bottom-3 h-7 rounded-md bg-neutral-100 px-2.5 text-xs font-medium transition-colors hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
-						>
-							Reset
-						</button>
+						{reset ? (
+							<button
+								type="button"
+								onClick={() => setRound((n) => n + 1)}
+								className="absolute right-3 bottom-3 h-7 rounded-md bg-neutral-100 px-2.5 text-xs font-medium transition-colors hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+							>
+								Reset
+							</button>
+						) : null}
 					</div>
 				) : (
 					<CodePanel html={html} code={code} />
