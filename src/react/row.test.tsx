@@ -1,8 +1,8 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { createEvent, fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { Content, Row } from "./index";
-import { flushFrames } from "./test-setup";
+import { Action, Actions, Content, Row } from "./index";
+import { finishCollapse, flushFrames } from "./test-setup";
 
 function press(element: Element, x = 100, y = 10) {
 	fireEvent.pointerDown(element, {
@@ -217,5 +217,105 @@ describe("Row and Content", () => {
 		press(content());
 		drag(content(), 60);
 		expect(content().style.transform).not.toBe("");
+	});
+
+	describe("when the pointer leaves the row", () => {
+		const onSelect = vi.fn();
+		const tree = (
+			<Row data-testid="row">
+				<Content data-testid="content">Hello</Content>
+				<Actions side="end">
+					<Action onSelect={onSelect} commit>
+						Delete
+					</Action>
+				</Actions>
+			</Row>
+		);
+
+		it("follows a flick that's off the row before the drag locks", () => {
+			onSelect.mockClear();
+			render(tree);
+			press(content(), 250);
+			drag(document.body, 20);
+			expect(content().style.transform).toMatch(/^translateX\(-/);
+			release(document.body, 20);
+			flushFrames();
+			finishCollapse();
+			expect(onSelect).toHaveBeenCalledOnce();
+		});
+
+		it("drops the gesture if a mouse moves with no button held", () => {
+			render(tree);
+			press(content(), 250);
+			fireEvent.pointerMove(content(), {
+				clientX: 100,
+				clientY: 10,
+				pointerId: 1,
+				pointerType: "mouse",
+				buttons: 0,
+			});
+			expect(content().style.transform).toBe("");
+			expect(screen.getByTestId("row").dataset.phase).toBe("idle");
+		});
+
+		it("keeps a mouse drag going while its button is held", () => {
+			render(tree);
+			press(content(), 250);
+			fireEvent.pointerMove(content(), {
+				clientX: 100,
+				clientY: 10,
+				pointerId: 1,
+				pointerType: "mouse",
+				buttons: 1,
+			});
+			expect(content().style.transform).toMatch(/^translateX\(-/);
+		});
+
+		describe("commitMomentum", () => {
+			function flick(momentum?: number) {
+				render(
+					<Row data-testid="row" commitMomentum={momentum}>
+						<Content data-testid="content">Hello</Content>
+						<Actions side="end">
+							<Action onSelect={onSelect} commit>
+								Delete
+							</Action>
+						</Actions>
+					</Row>,
+				);
+				press(content(), 250);
+				for (const [x, timeStamp] of [
+					[200, 1000],
+					[130, 1030],
+				]) {
+					const event = createEvent.pointerMove(content(), {
+						clientX: x,
+						clientY: 10,
+						pointerId: 1,
+					});
+					Object.defineProperty(event, "timeStamp", { value: timeStamp });
+					fireEvent(content(), event);
+				}
+				release(content(), 130);
+				return screen.getByTestId("row");
+			}
+
+			it("commits a fast flick early by default", () => {
+				expect(flick().dataset.phase).toBe("committing");
+			});
+
+			it("goes by distance alone at 0", () => {
+				expect(flick(0).dataset.openSide).toBe("end");
+			});
+		});
+
+		it("stops following once the pointer is released", () => {
+			render(tree);
+			press(content(), 250);
+			release(content(), 250);
+			drag(content(), 100);
+			expect(content().style.transform).toBe("");
+			expect(screen.getByTestId("row").dataset.phase).toBe("idle");
+		});
 	});
 });

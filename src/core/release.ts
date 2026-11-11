@@ -5,6 +5,8 @@ import type { Side, Sides } from "./sides";
 export const COMMIT_RATIO = 0.6;
 /** How far ahead (in seconds) to project a release, so a flick goes further than a drag. */
 export const PROJECTION = 0.15;
+/** The same for committing. Shorter, so a flick helps without deleting rows by accident. */
+export const COMMIT_MOMENTUM = 0.05;
 
 export type Release =
 	| { type: "close" }
@@ -18,6 +20,8 @@ export interface ReleaseInput {
 	rowWidth: number;
 	sides: Sides;
 	dir?: Direction;
+	/** Seconds of release speed that count towards a commit. 0 goes by distance alone. */
+	commitMomentum?: number;
 }
 
 /**
@@ -37,10 +41,29 @@ export function armedSide({
 
 /** Decides where a row goes when the pointer lets go. */
 export function resolveRelease(input: ReleaseInput): Release {
-	const { offset, velocity, sides, dir } = input;
+	const {
+		offset,
+		velocity,
+		sides,
+		dir,
+		commitMomentum = COMMIT_MOMENTUM,
+	} = input;
 
 	const armed = armedSide(input);
 	if (armed) return { type: "commit", side: armed };
+
+	// A flick can commit early, but only once it has cleared the side's actions.
+	const flung = armedSide({
+		...input,
+		offset: offset + velocity * commitMomentum,
+	});
+	if (
+		flung &&
+		flung === sideOf(offset, dir) &&
+		Math.abs(offset) >= (sides[flung]?.width ?? 0)
+	) {
+		return { type: "commit", side: flung };
+	}
 
 	const projected = offset + velocity * PROJECTION;
 	const side = sideOf(projected, dir);

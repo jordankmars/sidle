@@ -360,6 +360,20 @@ describe("createSwipeMachine", () => {
 			expect(commits).toEqual(["end"]);
 		});
 
+		it("lets commitMomentum decide whether a flick commits", () => {
+			const fast = setupCommit();
+			release(fast, -160, 40);
+			expect(fast.getState().phase).toBe("committing");
+
+			const strict = createSwipeMachine({ commitMomentum: 0 });
+			strict.setLayout(committable);
+			release(strict, -160, 40);
+			expect(strict.getState()).toMatchObject({
+				phase: "settling",
+				openSide: "end",
+			});
+		});
+
 		it("commits from the keyboard without a drag", () => {
 			const commits: string[] = [];
 			const m = setupCommit((side) => commits.push(side));

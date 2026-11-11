@@ -9,17 +9,7 @@ export type ContentProps = ComponentPropsWithoutRef<"div">;
 
 export const Content = forwardRef<HTMLDivElement, ContentProps>(
 	function Content(
-		{
-			style,
-			onPointerDown,
-			onPointerMove,
-			onPointerUp,
-			onPointerCancel,
-			onClickCapture,
-			onDragStart,
-			onKeyDown,
-			...props
-		},
+		{ style, onPointerDown, onClickCapture, onDragStart, onKeyDown, ...props },
 		forwardedRef,
 	) {
 		const controller = useRowController("Content");
@@ -55,18 +45,6 @@ export const Content = forwardRef<HTMLDivElement, ContentProps>(
 				onPointerDown={(event) => {
 					onPointerDown?.(event);
 					controller.pointerDown(event);
-				}}
-				onPointerMove={(event) => {
-					onPointerMove?.(event);
-					controller.pointerMove(event);
-				}}
-				onPointerUp={(event) => {
-					onPointerUp?.(event);
-					controller.pointerUp(event);
-				}}
-				onPointerCancel={(event) => {
-					onPointerCancel?.(event);
-					controller.pointerCancel();
 				}}
 				onClickCapture={(event) => {
 					if (!controller.clickCapture(event)) onClickCapture?.(event);

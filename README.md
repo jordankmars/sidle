@@ -42,13 +42,13 @@ import * as Sidle from "sidle/react";
 
 Every part takes the props of the element it renders and forwards its ref.
 
-| Part      | Renders  | Props                                                              |
-| --------- | -------- | ------------------------------------------------------------------ |
-| `Group`   | nothing  | None                                                               |
-| `Row`     | `div`    | `value`, `dir`, `edgeGuard` (px, default 24, 0 to turn it off)     |
-| `Content` | `div`    | None                                                               |
-| `Actions` | `div`    | `side` (`"start"` or `"end"`), `width` (px, default 75 per action) |
-| `Action`  | `button` | `onSelect`, `commit`, `shortcut` (a key or an array of keys)       |
+| Part      | Renders  | Props                                                                                                    |
+| --------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| `Group`   | nothing  | None                                                                                                     |
+| `Row`     | `div`    | `value`, `dir`, `edgeGuard` (px, default 24, 0 to turn it off), `commitMomentum` (seconds, default 0.05) |
+| `Content` | `div`    | None                                                                                                     |
+| `Actions` | `div`    | `side` (`"start"` or `"end"`), `width` (px, default 75 per action)                                       |
+| `Action`  | `button` | `onSelect`, `commit`, `shortcut` (a key or an array of keys)                                             |
 
 ### Commit actions
 
@@ -56,6 +56,10 @@ A `commit` action is the one a full swipe runs. The row slides away and collapse
 first, and `onSelect` fires after that, so `onSelect={remove}` takes the row out
 of your list at the right moment. A commit can't be undone by the row: if
 `onSelect` doesn't remove it, it stays collapsed at zero height.
+
+A fast flick commits a little early, once it's past the side's actions. Tune that
+with `commitMomentum` on `Row`: it's how many seconds of the release speed count
+towards the commit point, and 0 goes by distance alone.
 
 Plain actions run `onSelect` straight away and close the row.
 

@@ -27,10 +27,15 @@ export interface RowProps extends ComponentPropsWithoutRef<"div"> {
 	 * them to the iOS back gesture. 0 turns it off.
 	 */
 	edgeGuard?: number;
+	/**
+	 * Seconds of release speed that count towards a full swipe, so a fast flick
+	 * commits early. 0 goes by distance alone.
+	 */
+	commitMomentum?: number;
 }
 
 export const Row = forwardRef<HTMLDivElement, RowProps>(function Row(
-	{ value, dir, edgeGuard = 24, style, children, ...props },
+	{ value, dir, edgeGuard = 24, commitMomentum, style, children, ...props },
 	forwardedRef,
 ) {
 	const generated = useId();
@@ -42,8 +47,14 @@ export const Row = forwardRef<HTMLDivElement, RowProps>(function Row(
 
 	useIsomorphicLayoutEffect(() => {
 		if (!rowRef.current) return;
-		return controller.connect({ row: rowRef.current, id, group, edgeGuard });
-	}, [controller, id, group, edgeGuard]);
+		return controller.connect({
+			row: rowRef.current,
+			id,
+			group,
+			edgeGuard,
+			commitMomentum,
+		});
+	}, [controller, id, group, edgeGuard, commitMomentum]);
 
 	// A ResizeObserver can't see the direction change.
 	useIsomorphicLayoutEffect(() => {
