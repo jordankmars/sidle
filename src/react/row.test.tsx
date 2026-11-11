@@ -244,6 +244,33 @@ describe("Row and Content", () => {
 			expect(onSelect).toHaveBeenCalledOnce();
 		});
 
+		it("drops the gesture if a mouse moves with no button held", () => {
+			render(tree);
+			press(content(), 250);
+			fireEvent.pointerMove(content(), {
+				clientX: 100,
+				clientY: 10,
+				pointerId: 1,
+				pointerType: "mouse",
+				buttons: 0,
+			});
+			expect(content().style.transform).toBe("");
+			expect(screen.getByTestId("row").dataset.phase).toBe("idle");
+		});
+
+		it("keeps a mouse drag going while its button is held", () => {
+			render(tree);
+			press(content(), 250);
+			fireEvent.pointerMove(content(), {
+				clientX: 100,
+				clientY: 10,
+				pointerId: 1,
+				pointerType: "mouse",
+				buttons: 1,
+			});
+			expect(content().style.transform).toMatch(/^translateX\(-/);
+		});
+
 		it("stops following once the pointer is released", () => {
 			render(tree);
 			press(content(), 250);

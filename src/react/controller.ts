@@ -198,6 +198,11 @@ export function createRowController(): RowController {
 
 	function pointerMove(event: PointerEvent) {
 		if (!machine) return;
+		// The release never reached us, as when Ctrl-click opens a context menu.
+		if (event.pointerType === "mouse" && event.buttons === 0) {
+			pointerCancel();
+			return;
+		}
 		const wasDragging = machine.getState().phase === "dragging";
 		machine.move(toPoint(event));
 		// Once the drag is ours, the click that follows it should land on the row.
