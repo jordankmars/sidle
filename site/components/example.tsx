@@ -3,9 +3,11 @@ import { join } from "node:path";
 import { highlight } from "@/lib/highlight";
 import { ExampleTabs } from "./example-tabs";
 import { Inbox } from "./examples/inbox";
+import { Keyboard } from "./examples/keyboard";
 
 const DEMOS = {
 	inbox: Inbox,
+	keyboard: Keyboard,
 };
 
 /** Runs `components/examples/<name>.tsx` and shows that same file as its code. */
