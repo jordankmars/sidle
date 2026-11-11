@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { StrictMode } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { Content, Row } from "./index";
-import { flushFrames } from "./test-setup";
+import { Action, Actions, Content, Row } from "./index";
+import { finishCollapse, flushFrames } from "./test-setup";
 
 function press(element: Element, x = 100, y = 10) {
 	fireEvent.pointerDown(element, {
@@ -217,5 +217,40 @@ describe("Row and Content", () => {
 		press(content());
 		drag(content(), 60);
 		expect(content().style.transform).not.toBe("");
+	});
+
+	describe("when the pointer leaves the row", () => {
+		const onSelect = vi.fn();
+		const tree = (
+			<Row data-testid="row">
+				<Content data-testid="content">Hello</Content>
+				<Actions side="end">
+					<Action onSelect={onSelect} commit>
+						Delete
+					</Action>
+				</Actions>
+			</Row>
+		);
+
+		it("follows a flick that's off the row before the drag locks", () => {
+			onSelect.mockClear();
+			render(tree);
+			press(content(), 250);
+			drag(document.body, 20);
+			expect(content().style.transform).toMatch(/^translateX\(-/);
+			release(document.body, 20);
+			flushFrames();
+			finishCollapse();
+			expect(onSelect).toHaveBeenCalledOnce();
+		});
+
+		it("stops following once the pointer is released", () => {
+			render(tree);
+			press(content(), 250);
+			release(content(), 250);
+			drag(content(), 100);
+			expect(content().style.transform).toBe("");
+			expect(screen.getByTestId("row").dataset.phase).toBe("idle");
+		});
 	});
 });

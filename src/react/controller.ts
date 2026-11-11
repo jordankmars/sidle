@@ -1,4 +1,8 @@
-import type { KeyboardEvent, MouseEvent, PointerEvent } from "react";
+import type {
+	KeyboardEvent,
+	MouseEvent,
+	PointerEvent as ReactPointerEvent,
+} from "react";
 import {
 	createSwipeMachine,
 	type Direction,
@@ -58,15 +62,14 @@ export interface RowController {
 	keyDown(event: KeyboardEvent<HTMLElement>): void;
 	/** Close the row and put focus back on its content. */
 	dismiss(): void;
-	pointerDown(event: PointerEvent<HTMLElement>): void;
-	pointerMove(event: PointerEvent<HTMLElement>): void;
-	pointerUp(event: PointerEvent<HTMLElement>): void;
-	pointerCancel(): void;
+	pointerDown(event: ReactPointerEvent<HTMLElement>): void;
 	/** Returns true if this click was the tail end of a swipe and was swallowed. */
 	clickCapture(event: MouseEvent<HTMLElement>): boolean;
 }
 
-function toPoint(event: PointerEvent): Point {
+function toPoint(
+	event: Pick<PointerEvent, "clientX" | "clientY" | "timeStamp" | "pointerId">,
+): Point {
 	return {
 		x: event.clientX,
 		y: event.clientY,
@@ -96,6 +99,8 @@ export function createRowController(): RowController {
 	let reducedMotion = false;
 	/** The commit action picked by tap or shortcut. A full swipe leaves it empty. */
 	let chosenCommit: ActionEntry | undefined;
+	/** Removes the window listeners that follow a press. */
+	let stopFollowing: (() => void) | null = null;
 
 	/** The action a full swipe on this side commits. */
 	function mainAction(side: Side): ActionEntry | undefined {
@@ -191,6 +196,51 @@ export function createRowController(): RowController {
 		}
 	}
 
+	function pointerMove(event: PointerEvent) {
+		if (!machine) return;
+		const wasDragging = machine.getState().phase === "dragging";
+		machine.move(toPoint(event));
+		// Once the drag is ours, the click that follows it should land on the row.
+		if (!wasDragging && machine.getState().phase === "dragging") {
+			content?.setPointerCapture(event.pointerId);
+		}
+	}
+
+	/** Stop following unless another pointer is still driving the row. */
+	function finishPress() {
+		const phase = machine?.getState().phase;
+		if (phase !== "pending" && phase !== "dragging") stopFollowing?.();
+	}
+
+	function pointerUp(event: PointerEvent) {
+		swiped = (machine?.up(toPoint(event)) ?? false) || dismissed;
+		finishPress();
+	}
+
+	function pointerCancel() {
+		machine?.cancel();
+		finishPress();
+	}
+
+	/**
+	 * Listen on the window, since a fast flick can be off the row before the first
+	 * move. Capturing the pointer on press would solve that too, but would take
+	 * clicks away from links and buttons inside the row.
+	 */
+	function followPress() {
+		if (stopFollowing) return;
+		const options = { capture: true };
+		window.addEventListener("pointermove", pointerMove, options);
+		window.addEventListener("pointerup", pointerUp, options);
+		window.addEventListener("pointercancel", pointerCancel, options);
+		stopFollowing = () => {
+			window.removeEventListener("pointermove", pointerMove, options);
+			window.removeEventListener("pointerup", pointerUp, options);
+			window.removeEventListener("pointercancel", pointerCancel, options);
+			stopFollowing = null;
+		};
+	}
+
 	return {
 		connect({ row, id, group, edgeGuard }) {
 			rowElement = row;
@@ -235,6 +285,7 @@ export function createRowController(): RowController {
 
 			return () => {
 				disposing = true;
+				stopFollowing?.();
 				// Settle first so a commit in flight lands and the group sees the final state.
 				current.destroy();
 				finishCollapse?.();
@@ -323,24 +374,7 @@ export function createRowController(): RowController {
 			// Direction can change on an ancestor without anything telling us.
 			if (!dirProp) measure();
 			machine?.down(toPoint(event));
-		},
-
-		pointerMove(event) {
-			if (!machine) return;
-			const wasDragging = machine.getState().phase === "dragging";
-			machine.move(toPoint(event));
-			// Once the drag is ours, keep getting events even if the pointer leaves the row.
-			if (!wasDragging && machine.getState().phase === "dragging") {
-				event.currentTarget.setPointerCapture(event.pointerId);
-			}
-		},
-
-		pointerUp(event) {
-			swiped = (machine?.up(toPoint(event)) ?? false) || dismissed;
-		},
-
-		pointerCancel() {
-			machine?.cancel();
+			followPress();
 		},
 
 		clickCapture(event) {
