@@ -3,8 +3,8 @@ import { BookIcon, GitHubIcon } from "@/components/icons";
 import { InboxDemo } from "@/components/inbox-demo";
 import { AUTHOR_URL, external, GITHUB_URL } from "@/lib/links";
 
-// Both buttons share eclose's trigger shape. The primary one is "ink":
-// neutral-900 in light mode and neutral-100 in dark mode.
+// Both buttons share one shape. The primary one is "ink": neutral-900 in light
+// mode and neutral-100 in dark mode.
 const button =
 	"flex h-10 items-center gap-2 rounded-xl px-4 text-[14px]/[1.5] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-400";
 const primary =

@@ -1,5 +1,8 @@
 # sidle
 
+[![CI](https://github.com/jordankmars/sidle/actions/workflows/ci.yml/badge.svg)](https://github.com/jordankmars/sidle/actions/workflows/ci.yml)
+[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
 > iOS Mail-style swipe actions for list rows.
 
 Swipe partway to reveal a row's actions, or all the way to commit the main one.
@@ -9,13 +12,18 @@ distance, and only one row is open at a time.
 ## Status
 
 Early days. The framework-agnostic core and the React adapter are both in place,
-but nothing is published yet.
+but the package isn't on npm yet. To try it now, clone the repo and run the
+playground (see [Development](#development)).
 
 ## Installation
+
+Once it's published:
 
 ```sh
 npm install sidle
 ```
+
+React 18 or later is a peer dependency.
 
 ## Usage
 
@@ -107,10 +115,15 @@ set `width` on `Actions` or `transform` on `Content`, since those move every fra
 
 ## Development
 
+Needs Node 20+ and pnpm.
+
 ```sh
 pnpm install
 pnpm test        # unit tests for the core and the React adapter
 pnpm playground  # Vite dev server with an inbox demo
+pnpm site:dev    # the docs site, in site/
+pnpm lint        # Biome
+pnpm typecheck
 ```
 
 The core lives in `src/core` and never touches the DOM. You feed it pointer
@@ -121,7 +134,9 @@ adapter in `src/react` connects it to the page, and the playground in
 
 ## Contributing
 
-Contributions are welcome. Please open an issue to discuss changes before submitting a pull request.
+Bug reports and pull requests are welcome. For anything bigger than a small fix,
+open an issue first so the approach can be agreed on. CI runs lint, typecheck,
+the tests and both builds, so running those locally first saves a round trip.
 
 ## License
 
