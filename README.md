@@ -11,15 +11,7 @@ Swipe partway to reveal a row's actions, or all the way to commit the main one.
 A vertical drag still scrolls the page, a quick flick opens a row even over a short
 distance, and only one row is open at a time.
 
-## Status
-
-Early days. The framework-agnostic core and the React adapter are both in place,
-but the package isn't on npm yet. To try it now, clone the repo and run the
-playground (see [Development](#development)).
-
 ## Installation
-
-Once it's published:
 
 ```sh
 npm install sidle
@@ -111,7 +103,7 @@ set `width` on `Actions` or `transform` on `Content`, since those move every fra
 
 | Framework | Import path    | Status      |
 | --------- | -------------- | ----------- |
-| React     | `sidle/react`  | Unreleased  |
+| React     | `sidle/react`  | Released    |
 | Vue       | `sidle/vue`    | Coming soon |
 | Svelte    | `sidle/svelte` | Coming soon |
 

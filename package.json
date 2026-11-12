@@ -1,6 +1,6 @@
 {
 	"name": "sidle",
-	"version": "0.0.0",
+	"version": "1.0.0",
 	"description": "iOS Mail-style swipe actions for list rows",
 	"keywords": [
 		"react",
