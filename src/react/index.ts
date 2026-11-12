@@ -1,4 +1,4 @@
-// React adapter. Published as sidle/react.
+// React adapter. Published as tuckaway/react.
 
 export type { Direction, Side } from "../core";
 export { Action, type ActionProps } from "./action";

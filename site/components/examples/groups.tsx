@@ -1,6 +1,6 @@
 "use client";
 
-import * as Sidle from "sidle/react";
+import * as Tuckaway from "tuckaway/react";
 
 const lists = [
 	{ title: "Today", rows: ["Stand-up", "Lunch"] },
@@ -16,23 +16,23 @@ export function Groups() {
 						{list.title}
 					</p>
 					<div className="divide-y divide-neutral-200 overflow-hidden rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
-						<Sidle.Group>
+						<Tuckaway.Group>
 							{list.rows.map((row) => (
-								<Sidle.Row key={row} value={row}>
-									<Sidle.Content className="cursor-grab bg-white px-3.5 py-3 text-left dark:bg-neutral-900">
+								<Tuckaway.Row key={row} value={row}>
+									<Tuckaway.Content className="cursor-grab bg-white px-3.5 py-3 text-left dark:bg-neutral-900">
 										{row}
-									</Sidle.Content>
-									<Sidle.Actions side="end">
-										<Sidle.Action
+									</Tuckaway.Content>
+									<Tuckaway.Actions side="end">
+										<Tuckaway.Action
 											className="bg-amber-500 text-[12.5px] font-medium text-white"
 											onSelect={() => {}}
 										>
 											Move
-										</Sidle.Action>
-									</Sidle.Actions>
-								</Sidle.Row>
+										</Tuckaway.Action>
+									</Tuckaway.Actions>
+								</Tuckaway.Row>
 							))}
-						</Sidle.Group>
+						</Tuckaway.Group>
 					</div>
 				</div>
 			))}

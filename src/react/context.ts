@@ -12,7 +12,8 @@ export const RowContext = createContext<RowController | null>(null);
 
 export function useRowController(part: string): RowController {
 	const controller = useContext(RowContext);
-	if (!controller) throw new Error(`Sidle.${part} must be inside a Sidle.Row.`);
+	if (!controller)
+		throw new Error(`Tuckaway.${part} must be inside a Tuckaway.Row.`);
 	return controller;
 }
 
@@ -20,7 +21,8 @@ export const PanelContext = createContext<PanelEntry | null>(null);
 
 export function usePanel(): PanelEntry {
 	const panel = useContext(PanelContext);
-	if (!panel) throw new Error("Sidle.Action must be inside a Sidle.Actions.");
+	if (!panel)
+		throw new Error("Tuckaway.Action must be inside a Tuckaway.Actions.");
 	return panel;
 }
 

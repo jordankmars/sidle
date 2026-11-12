@@ -29,7 +29,7 @@ export const Content = forwardRef<HTMLDivElement, ContentProps>(
 				tabIndex={0}
 				{...props}
 				ref={ref}
-				data-sidle-content=""
+				data-tuckaway-content=""
 				style={{
 					position: "relative",
 					zIndex: 1,

@@ -1,6 +1,6 @@
-# sidle
+# tuckaway
 
-[![CI](https://github.com/jordankmars/sidle/actions/workflows/ci.yml/badge.svg)](https://github.com/jordankmars/sidle/actions/workflows/ci.yml)
+[![CI](https://github.com/jordankmars/tuckaway/actions/workflows/ci.yml/badge.svg)](https://github.com/jordankmars/tuckaway/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 > iOS Mail-style swipe actions for list rows.
@@ -14,7 +14,7 @@ distance, and only one row is open at a time.
 ## Installation
 
 ```sh
-npm install sidle
+npm install tuckaway
 ```
 
 React 18 or later is a peer dependency.
@@ -22,22 +22,22 @@ React 18 or later is a peer dependency.
 ## Usage
 
 ```tsx
-import * as Sidle from "sidle/react";
+import * as Tuckaway from "tuckaway/react";
 
-<Sidle.Row value={mail.id}>
-	<Sidle.Actions side="start">
-		<Sidle.Action onSelect={archive}>Archive</Sidle.Action>
-	</Sidle.Actions>
-	<Sidle.Content onClick={open}>…row…</Sidle.Content>
-	<Sidle.Actions side="end">
-		<Sidle.Action shortcut="f" onSelect={flag}>
+<Tuckaway.Row value={mail.id}>
+	<Tuckaway.Actions side="start">
+		<Tuckaway.Action onSelect={archive}>Archive</Tuckaway.Action>
+	</Tuckaway.Actions>
+	<Tuckaway.Content onClick={open}>…row…</Tuckaway.Content>
+	<Tuckaway.Actions side="end">
+		<Tuckaway.Action shortcut="f" onSelect={flag}>
 			Flag
-		</Sidle.Action>
-		<Sidle.Action shortcut="Delete" onSelect={remove} commit>
+		</Tuckaway.Action>
+		<Tuckaway.Action shortcut="Delete" onSelect={remove} commit>
 			Delete
-		</Sidle.Action>
-	</Sidle.Actions>
-</Sidle.Row>;
+		</Tuckaway.Action>
+	</Tuckaway.Actions>
+</Tuckaway.Row>;
 ```
 
 ### Parts
@@ -68,7 +68,7 @@ Plain actions run `onSelect` straight away and close the row.
 ### One open row
 
 Rows share one group across the page, so opening a row closes any other. Wrap a
-list in `Sidle.Group` to let it keep its own open row. Tapping outside every row
+list in `Tuckaway.Group` to let it keep its own open row. Tapping outside every row
 closes whichever is open.
 
 In a virtualized list, give each row a stable `value`. A row that scrolls away
@@ -101,11 +101,11 @@ set `width` on `Actions` or `transform` on `Content`, since those move every fra
 
 ## Adapters
 
-| Framework | Import path    | Status      |
-| --------- | -------------- | ----------- |
-| React     | `sidle/react`  | Released    |
-| Vue       | `sidle/vue`    | Coming soon |
-| Svelte    | `sidle/svelte` | Coming soon |
+| Framework | Import path       | Status      |
+| --------- | ----------------- | ----------- |
+| React     | `tuckaway/react`  | Released    |
+| Vue       | `tuckaway/vue`    | Coming soon |
+| Svelte    | `tuckaway/svelte` | Coming soon |
 
 ## Development
 

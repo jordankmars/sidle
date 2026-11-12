@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as Sidle from "sidle/react";
+import * as Tuckaway from "tuckaway/react";
 import { ExampleTabs } from "../example-tabs";
 import {
 	SIDES,
@@ -30,33 +30,33 @@ export function ActionsPicker({
 	const view = (
 		<>
 			<div className="w-[min(100%,380px)] overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
-				<Sidle.Row key={`${side}-${commit}-${round}`}>
+				<Tuckaway.Row key={`${side}-${commit}-${round}`}>
 					{side !== "end" && (
-						<Sidle.Actions side="start">
-							<Sidle.Action
+						<Tuckaway.Actions side="start">
+							<Tuckaway.Action
 								className={`${action} bg-emerald-600`}
 								onSelect={again}
 								commit={commit}
 							>
 								Archive
-							</Sidle.Action>
-						</Sidle.Actions>
+							</Tuckaway.Action>
+						</Tuckaway.Actions>
 					)}
-					<Sidle.Content className="cursor-grab bg-white px-3.5 py-4 text-left text-[13.5px] font-medium dark:bg-neutral-900">
+					<Tuckaway.Content className="cursor-grab bg-white px-3.5 py-4 text-left text-[13.5px] font-medium dark:bg-neutral-900">
 						Swipe this row
-					</Sidle.Content>
+					</Tuckaway.Content>
 					{side !== "start" && (
-						<Sidle.Actions side="end">
-							<Sidle.Action
+						<Tuckaway.Actions side="end">
+							<Tuckaway.Action
 								className={`${action} bg-red-500`}
 								onSelect={again}
 								commit={commit}
 							>
 								Delete
-							</Sidle.Action>
-						</Sidle.Actions>
+							</Tuckaway.Action>
+						</Tuckaway.Actions>
 					)}
-				</Sidle.Row>
+				</Tuckaway.Row>
 			</div>
 			<div className="absolute bottom-4 left-4 flex items-center gap-3">
 				<fieldset className="flex gap-1">

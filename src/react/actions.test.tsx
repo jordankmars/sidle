@@ -313,7 +313,7 @@ describe("Actions and Action", () => {
 					<Action onSelect={() => {}}>Flag</Action>
 				</Row>,
 			),
-		).toThrow("must be inside a Sidle.Actions");
+		).toThrow("must be inside a Tuckaway.Actions");
 		error.mockRestore();
 	});
 });

@@ -12,26 +12,26 @@ const panel = (
 	commit: boolean,
 ) =>
 	commit
-		? `			<Sidle.Actions side="${side}">
-				<Sidle.Action onSelect={${handler}} commit>
+		? `			<Tuckaway.Actions side="${side}">
+				<Tuckaway.Action onSelect={${handler}} commit>
 					${label}
-				</Sidle.Action>
-			</Sidle.Actions>`
-		: `			<Sidle.Actions side="${side}">
-				<Sidle.Action onSelect={${handler}}>${label}</Sidle.Action>
-			</Sidle.Actions>`;
+				</Tuckaway.Action>
+			</Tuckaway.Actions>`
+		: `			<Tuckaway.Actions side="${side}">
+				<Tuckaway.Action onSelect={${handler}}>${label}</Tuckaway.Action>
+			</Tuckaway.Actions>`;
 
 export const actionsCode = (side: SideChoice, commit: boolean) =>
 	[
-		`import * as Sidle from "sidle/react";
+		`import * as Tuckaway from "tuckaway/react";
 
 export function Example({ archive, remove }) {
 	return (
-		<Sidle.Row>`,
+		<Tuckaway.Row>`,
 		side !== "end" && panel("start", "Archive", "archive", commit),
-		"			<Sidle.Content>Swipe this row</Sidle.Content>",
+		"			<Tuckaway.Content>Swipe this row</Tuckaway.Content>",
 		side !== "start" && panel("end", "Delete", "remove", commit),
-		`		</Sidle.Row>
+		`		</Tuckaway.Row>
 	);
 }`,
 	]

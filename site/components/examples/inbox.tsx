@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as Sidle from "sidle/react";
+import * as Tuckaway from "tuckaway/react";
 
 const inbox = [
 	{ id: "1", from: "Priya Nair", text: "Pushed the fix, can you take a look?" },
@@ -26,17 +26,17 @@ export function Inbox() {
 	return (
 		<div className="w-[min(100%,380px)] divide-y divide-neutral-200 overflow-hidden rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
 			{mails.map((mail) => (
-				<Sidle.Row key={mail.id} value={mail.id}>
-					<Sidle.Actions side="start">
-						<Sidle.Action
+				<Tuckaway.Row key={mail.id} value={mail.id}>
+					<Tuckaway.Actions side="start">
+						<Tuckaway.Action
 							className={`${action} bg-emerald-600`}
 							onSelect={() => remove(mail.id)}
 							commit
 						>
 							Archive
-						</Sidle.Action>
-					</Sidle.Actions>
-					<Sidle.Content className="cursor-grab bg-white px-3.5 py-2.5 text-left dark:bg-neutral-900">
+						</Tuckaway.Action>
+					</Tuckaway.Actions>
+					<Tuckaway.Content className="cursor-grab bg-white px-3.5 py-2.5 text-left dark:bg-neutral-900">
 						<b className="flex items-center gap-1.5 text-[13.5px] font-medium">
 							{flagged.includes(mail.id) && (
 								<i className="size-[7px] rounded-full bg-amber-500" />
@@ -46,23 +46,23 @@ export function Inbox() {
 						<p className="truncate text-[12.5px] text-neutral-500 dark:text-neutral-400">
 							{mail.text}
 						</p>
-					</Sidle.Content>
-					<Sidle.Actions side="end">
-						<Sidle.Action
+					</Tuckaway.Content>
+					<Tuckaway.Actions side="end">
+						<Tuckaway.Action
 							className={`${action} bg-amber-500`}
 							onSelect={() => flag(mail.id)}
 						>
 							Flag
-						</Sidle.Action>
-						<Sidle.Action
+						</Tuckaway.Action>
+						<Tuckaway.Action
 							className={`${action} bg-red-500`}
 							onSelect={() => remove(mail.id)}
 							commit
 						>
 							Delete
-						</Sidle.Action>
-					</Sidle.Actions>
-				</Sidle.Row>
+						</Tuckaway.Action>
+					</Tuckaway.Actions>
+				</Tuckaway.Row>
 			))}
 		</div>
 	);

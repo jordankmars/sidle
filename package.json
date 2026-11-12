@@ -1,5 +1,5 @@
 {
-	"name": "sidle",
+	"name": "tuckaway",
 	"version": "1.0.0",
 	"description": "iOS Mail-style swipe actions for list rows",
 	"keywords": [
@@ -11,13 +11,13 @@
 		"touch",
 		"headless"
 	],
-	"homepage": "https://github.com/jordankmars/sidle#readme",
+	"homepage": "https://github.com/jordankmars/tuckaway#readme",
 	"bugs": {
-		"url": "https://github.com/jordankmars/sidle/issues"
+		"url": "https://github.com/jordankmars/tuckaway/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/jordankmars/sidle.git"
+		"url": "git+https://github.com/jordankmars/tuckaway.git"
 	},
 	"author": "Jordan Mars",
 	"license": "MIT",

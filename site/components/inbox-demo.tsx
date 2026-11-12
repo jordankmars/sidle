@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as Sidle from "sidle/react";
+import * as Tuckaway from "tuckaway/react";
 
 // The playground's inbox (playground/main.tsx), with the same mail, sizes and
 // actions, in the site's neutral palette so it follows the theme toggle.
@@ -57,18 +57,18 @@ function Row({
 	onRemove: () => void;
 }) {
 	return (
-		<Sidle.Row value={mail.id}>
-			<Sidle.Actions side="start" width={90}>
-				<Sidle.Action
+		<Tuckaway.Row value={mail.id}>
+			<Tuckaway.Actions side="start" width={90}>
+				<Tuckaway.Action
 					className={`${action} bg-emerald-600`}
 					shortcut="e"
 					onSelect={onRemove}
 					commit
 				>
 					Archive
-				</Sidle.Action>
-			</Sidle.Actions>
-			<Sidle.Content
+				</Tuckaway.Action>
+			</Tuckaway.Actions>
+			<Tuckaway.Content
 				className={`${focus} grid cursor-grab grid-cols-[1fr_auto] gap-x-2.5 bg-white px-3.5 py-2.5 text-left dark:bg-neutral-900 ${
 					first ? "" : "border-t border-neutral-200 dark:border-neutral-800"
 				}`}
@@ -86,25 +86,25 @@ function Row({
 				<span className="col-span-full truncate text-[12.5px] text-neutral-500 dark:text-neutral-400">
 					{mail.text}
 				</span>
-			</Sidle.Content>
-			<Sidle.Actions side="end" width={150}>
-				<Sidle.Action
+			</Tuckaway.Content>
+			<Tuckaway.Actions side="end" width={150}>
+				<Tuckaway.Action
 					className={`${action} bg-amber-500`}
 					shortcut="f"
 					onSelect={onFlag}
 				>
 					Flag
-				</Sidle.Action>
-				<Sidle.Action
+				</Tuckaway.Action>
+				<Tuckaway.Action
 					className={`${action} bg-red-500`}
 					shortcut={["Delete", "Backspace"]}
 					onSelect={onRemove}
 					commit
 				>
 					Delete
-				</Sidle.Action>
-			</Sidle.Actions>
-		</Sidle.Row>
+				</Tuckaway.Action>
+			</Tuckaway.Actions>
+		</Tuckaway.Row>
 	);
 }
 
@@ -125,7 +125,7 @@ export function InboxDemo() {
 				key={round}
 				className="w-[min(100%,380px)] overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800"
 			>
-				<Sidle.Group>
+				<Tuckaway.Group>
 					{mails.map((mail, i) => (
 						<Row
 							key={mail.id}
@@ -135,7 +135,7 @@ export function InboxDemo() {
 							onRemove={() => remove(mail.id)}
 						/>
 					))}
-				</Sidle.Group>
+				</Tuckaway.Group>
 			</div>
 			{/* Hidden rather than unmounted, so the page doesn't shift. */}
 			<button

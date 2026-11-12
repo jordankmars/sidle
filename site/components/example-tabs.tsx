@@ -7,7 +7,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import * as Sidle from "sidle/react";
+import * as Tuckaway from "tuckaway/react";
 import { CodePanel } from "./code-panel";
 
 const TABS = ["View", "Code"] as const;
@@ -85,7 +85,7 @@ export function ExampleTabs({
 			>
 				{tab === "View" ? (
 					<div className="relative grid min-h-80 place-items-center p-8 max-sm:pb-12">
-						<Sidle.Group key={round}>{view}</Sidle.Group>
+						<Tuckaway.Group key={round}>{view}</Tuckaway.Group>
 						{reset ? (
 							<button
 								type="button"

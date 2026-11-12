@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import * as Sidle from "sidle/react";
+import * as Tuckaway from "tuckaway/react";
 
 const inbox = ["Design review", "Send invoices", "Book team lunch"];
 
@@ -23,8 +23,8 @@ export function Keyboard() {
 	return (
 		<div className="w-[min(100%,380px)] divide-y divide-neutral-200 overflow-hidden rounded-xl border border-neutral-200 text-sm dark:divide-neutral-800 dark:border-neutral-800">
 			{rows.map((item) => (
-				<Sidle.Row key={item} value={item}>
-					<Sidle.Content
+				<Tuckaway.Row key={item} value={item}>
+					<Tuckaway.Content
 						className={`${focus} flex items-center justify-between bg-white px-3.5 py-3 text-left dark:bg-neutral-900`}
 						aria-label={`${item}. F to flag, Delete to remove.`}
 					>
@@ -32,25 +32,25 @@ export function Keyboard() {
 						{flagged.includes(item) && (
 							<i className="size-[7px] rounded-full bg-amber-500" />
 						)}
-					</Sidle.Content>
-					<Sidle.Actions side="end">
-						<Sidle.Action
+					</Tuckaway.Content>
+					<Tuckaway.Actions side="end">
+						<Tuckaway.Action
 							className={`${focus} ${action} bg-amber-500`}
 							shortcut="f"
 							onSelect={() => flag(item)}
 						>
 							Flag
-						</Sidle.Action>
-						<Sidle.Action
+						</Tuckaway.Action>
+						<Tuckaway.Action
 							className={`${focus} ${action} bg-red-500`}
 							shortcut={["Delete", "Backspace"]}
 							onSelect={() => remove(item)}
 							commit
 						>
 							Delete
-						</Sidle.Action>
-					</Sidle.Actions>
-				</Sidle.Row>
+						</Tuckaway.Action>
+					</Tuckaway.Actions>
+				</Tuckaway.Row>
 			))}
 		</div>
 	);

@@ -266,7 +266,7 @@ export function createRowController(): RowController {
 						if (!disposing && row.contains(document.activeElement)) {
 							group
 								.neighbor(row)
-								?.querySelector<HTMLElement>("[data-sidle-content]")
+								?.querySelector<HTMLElement>("[data-tuckaway-content]")
 								?.focus();
 						}
 						action?.select();

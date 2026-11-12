@@ -31,7 +31,7 @@ describe("Row and Content", () => {
 			</Row>,
 		);
 		const row = screen.getByTestId("row");
-		expect(row.hasAttribute("data-sidle-row")).toBe(true);
+		expect(row.hasAttribute("data-tuckaway-row")).toBe(true);
 		expect(row.style.position).toBe("relative");
 		expect(row.style.overflow).toBe("hidden");
 		expect(content().style.touchAction).toBe("pan-y");
@@ -57,7 +57,7 @@ describe("Row and Content", () => {
 
 	it("throws a useful error outside a Row", () => {
 		const error = vi.spyOn(console, "error").mockImplementation(() => {});
-		expect(() => render(<Content />)).toThrow("must be inside a Sidle.Row");
+		expect(() => render(<Content />)).toThrow("must be inside a Tuckaway.Row");
 		error.mockRestore();
 	});
 
