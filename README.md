@@ -9,13 +9,18 @@ distance, and only one row is open at a time.
 ## Status
 
 Early days. The framework-agnostic core and the React adapter are both in place,
-but nothing is published yet.
+but the package isn't on npm yet. To try it now, clone the repo and run the
+playground (see [Development](#development)).
 
 ## Installation
+
+Once it's published:
 
 ```sh
 npm install sidle
 ```
+
+React 18 or later is a peer dependency.
 
 ## Usage
 
