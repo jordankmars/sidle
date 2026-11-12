@@ -67,7 +67,7 @@ export const Row = forwardRef<HTMLDivElement, RowProps>(function Row(
 				{...props}
 				ref={ref}
 				dir={dir}
-				data-sidle-row=""
+				data-tuckaway-row=""
 				style={{ position: "relative", overflow: "hidden", ...style }}
 			>
 				{children}

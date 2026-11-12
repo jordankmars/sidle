@@ -1,9 +1,9 @@
 import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import * as Sidle from "../src/react";
+import * as Tuckaway from "../src/react";
 
 // The demo for the React adapter, kept in one file on purpose. Everything here
-// is what a real app would write, with the swiping left to `sidle/react`.
+// is what a real app would write, with the swiping left to `tuckaway/react`.
 
 interface Mail {
 	id: string;
@@ -55,28 +55,28 @@ function Row({
 	onOpen,
 }: {
 	mail: Mail;
-	dir: Sidle.Direction;
+	dir: Tuckaway.Direction;
 	onFlag: () => void;
 	onRemove: () => void;
 	onOpen: () => void;
 }) {
 	return (
-		<Sidle.Row
+		<Tuckaway.Row
 			value={mail.id}
 			dir={dir}
 			className={mail.flagged ? "row flagged" : "row"}
 		>
-			<Sidle.Actions side="start" width={90}>
-				<Sidle.Action
+			<Tuckaway.Actions side="start" width={90}>
+				<Tuckaway.Action
 					className="action archive"
 					shortcut="e"
 					onSelect={onRemove}
 					commit
 				>
 					Archive
-				</Sidle.Action>
-			</Sidle.Actions>
-			<Sidle.Content
+				</Tuckaway.Action>
+			</Tuckaway.Actions>
+			<Tuckaway.Content
 				className="body"
 				aria-label={`${mail.from}: ${mail.text}. Delete to remove, E to archive, F to flag.`}
 				onClick={onOpen}
@@ -87,21 +87,21 @@ function Row({
 				</b>
 				<time>{mail.when}</time>
 				<span>{mail.text}</span>
-			</Sidle.Content>
-			<Sidle.Actions side="end" width={150}>
-				<Sidle.Action className="action flag" shortcut="f" onSelect={onFlag}>
+			</Tuckaway.Content>
+			<Tuckaway.Actions side="end" width={150}>
+				<Tuckaway.Action className="action flag" shortcut="f" onSelect={onFlag}>
 					Flag
-				</Sidle.Action>
-				<Sidle.Action
+				</Tuckaway.Action>
+				<Tuckaway.Action
 					className="action delete"
 					shortcut={["Delete", "Backspace"]}
 					onSelect={onRemove}
 					commit
 				>
 					Delete
-				</Sidle.Action>
-			</Sidle.Actions>
-		</Sidle.Row>
+				</Tuckaway.Action>
+			</Tuckaway.Actions>
+		</Tuckaway.Row>
 	);
 }
 
@@ -121,14 +121,14 @@ function Inbox({
 	dir,
 	onOpen,
 }: {
-	dir: Sidle.Direction;
+	dir: Tuckaway.Direction;
 	onOpen: (from: string) => void;
 }) {
 	const { mails, remove, toggleFlag } = useMailList(INBOX);
 
 	return (
 		<div className="mail">
-			<Sidle.Group>
+			<Tuckaway.Group>
 				{mails.map((mail) => (
 					<Row
 						key={mail.id}
@@ -139,7 +139,7 @@ function Inbox({
 						onOpen={() => onOpen(mail.from)}
 					/>
 				))}
-			</Sidle.Group>
+			</Tuckaway.Group>
 		</div>
 	);
 }
@@ -155,7 +155,7 @@ function WindowedList({
 	dir,
 	onOpen,
 }: {
-	dir: Sidle.Direction;
+	dir: Tuckaway.Direction;
 	onOpen: (from: string) => void;
 }) {
 	const { mails, remove, toggleFlag } = useMailList(MANY);
@@ -184,7 +184,7 @@ function WindowedList({
 			onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
 		>
 			<div style={{ height: first * ROW_HEIGHT }} />
-			<Sidle.Group>
+			<Tuckaway.Group>
 				{mails.slice(first, last).map((mail) => (
 					<Row
 						key={mail.id}
@@ -195,7 +195,7 @@ function WindowedList({
 						onOpen={() => onOpen(mail.from)}
 					/>
 				))}
-			</Sidle.Group>
+			</Tuckaway.Group>
 			<div style={{ height: (mails.length - last) * ROW_HEIGHT }} />
 		</div>
 	);
@@ -203,13 +203,13 @@ function WindowedList({
 
 function App() {
 	const [inbox, setInbox] = useState(0);
-	const [dir, setDir] = useState<Sidle.Direction>("ltr");
+	const [dir, setDir] = useState<Tuckaway.Direction>("ltr");
 	const [opened, setOpened] = useState<string | null>(null);
 	return (
 		<main>
 			<style>{CSS}</style>
 			<header>
-				<h1>sidle playground</h1>
+				<h1>tuckaway playground</h1>
 				<p>
 					Swipe a row left or right to reveal its actions. Swipe all the way to
 					commit. Vertical drags still scroll.

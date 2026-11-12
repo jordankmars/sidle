@@ -1,6 +1,6 @@
-# sidle site
+# tuckaway site
 
-The docs site for sidle: Next.js, statically exported, hosted on Cloudflare.
+The docs site for tuckaway: Next.js, statically exported, hosted on Cloudflare.
 
 ```sh
 pnpm site:dev    # from the repo root, builds the library first

@@ -15,26 +15,26 @@ interface FakeAnimation {
 }
 
 const fakes = globalThis as unknown as {
-	sidleFrames: Map<number, FrameRequestCallback>;
-	sidleAnimations: FakeAnimation[];
-	sidleClock: number;
-	sidleHandle: number;
-	sidleReducedMotion: boolean;
+	tuckawayFrames: Map<number, FrameRequestCallback>;
+	tuckawayAnimations: FakeAnimation[];
+	tuckawayClock: number;
+	tuckawayHandle: number;
+	tuckawayReducedMotion: boolean;
 };
 
-fakes.sidleFrames = new Map();
-fakes.sidleAnimations = [];
-fakes.sidleClock = 0;
-fakes.sidleHandle = 0;
-fakes.sidleReducedMotion = false;
+fakes.tuckawayFrames = new Map();
+fakes.tuckawayAnimations = [];
+fakes.tuckawayClock = 0;
+fakes.tuckawayHandle = 0;
+fakes.tuckawayReducedMotion = false;
 
 window.requestAnimationFrame = (callback) => {
-	fakes.sidleHandle += 1;
-	fakes.sidleFrames.set(fakes.sidleHandle, callback);
-	return fakes.sidleHandle;
+	fakes.tuckawayHandle += 1;
+	fakes.tuckawayFrames.set(fakes.tuckawayHandle, callback);
+	return fakes.tuckawayHandle;
 };
 window.cancelAnimationFrame = (handle) => {
-	fakes.sidleFrames.delete(handle);
+	fakes.tuckawayFrames.delete(handle);
 };
 
 window.ResizeObserver = class {
@@ -44,7 +44,7 @@ window.ResizeObserver = class {
 };
 
 window.matchMedia = ((query: string) => ({
-	matches: fakes.sidleReducedMotion,
+	matches: fakes.tuckawayReducedMotion,
 	media: query,
 })) as typeof window.matchMedia;
 
@@ -61,7 +61,7 @@ Element.prototype.animate = function animate(
 			animation.cancelled = true;
 		},
 	};
-	fakes.sidleAnimations.push(animation);
+	fakes.tuckawayAnimations.push(animation);
 	return animation as unknown as Animation;
 };
 
@@ -74,33 +74,33 @@ Object.defineProperty(HTMLElement.prototype, "clientWidth", {
 
 /** Run the frame loop until nothing is animating, or for a set number of frames. */
 export function flushFrames(limit = 200) {
-	for (let i = 0; i < limit && fakes.sidleFrames.size > 0; i++) {
-		const callbacks = [...fakes.sidleFrames.values()];
-		fakes.sidleFrames.clear();
-		fakes.sidleClock += 16;
-		for (const callback of callbacks) callback(fakes.sidleClock);
+	for (let i = 0; i < limit && fakes.tuckawayFrames.size > 0; i++) {
+		const callbacks = [...fakes.tuckawayFrames.values()];
+		fakes.tuckawayFrames.clear();
+		fakes.tuckawayClock += 16;
+		for (const callback of callbacks) callback(fakes.tuckawayClock);
 	}
 }
 
 /** Animations started through `Element.animate` so far. */
 export function runningAnimations() {
-	return fakes.sidleAnimations;
+	return fakes.tuckawayAnimations;
 }
 
 export function setReducedMotion(reduced: boolean) {
-	fakes.sidleReducedMotion = reduced;
+	fakes.tuckawayReducedMotion = reduced;
 }
 
 /** Finish the most recent collapse, as if its animation had run to the end. */
 export function finishCollapse() {
-	const animation = fakes.sidleAnimations.at(-1);
+	const animation = fakes.tuckawayAnimations.at(-1);
 	if (!animation) throw new Error("No row is collapsing.");
 	act(() => animation.onfinish?.());
 }
 
 beforeEach(() => {
-	fakes.sidleAnimations = [];
-	fakes.sidleReducedMotion = false;
+	fakes.tuckawayAnimations = [];
+	fakes.tuckawayReducedMotion = false;
 });
 
 afterEach(() => {

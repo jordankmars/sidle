@@ -17,7 +17,7 @@ export function createGroupController(): GroupController {
 
 	function onPointerDown({ target }: PointerEvent) {
 		// A row in another group doesn't count: each group keeps its own open row.
-		if (!(target instanceof Element && target.closest("[data-sidle-row]"))) {
+		if (!(target instanceof Element && target.closest("[data-tuckaway-row]"))) {
 			swipe.closeAll();
 		}
 	}

@@ -6,7 +6,7 @@ export const metadata = { title: "Styling" };
 
 <Lead>The same parts, in any look.</Lead>
 
-sidle ships no CSS. Each part takes your own classes, and sets only the inline styles swiping depends on. Here's one list in five styles.
+tuckaway ships no CSS. Each part takes your own classes, and sets only the inline styles swiping depends on. Here's one list in five styles.
 
 ## Site
 
@@ -34,24 +34,24 @@ Monospace and sharp corners. An action's children can be anything.
 
 ## Soft
 
-Large radii and a wide, diffuse shadow, one per row. A rounded `Sidle.Row` clips its actions to match.
+Large radii and a wide, diffuse shadow, one per row. A rounded `Tuckaway.Row` clips its actions to match.
 
 <Example name="style-soft" />
 
 ## Style by state
 
-`Sidle.Row` has a `data-phase`, and `Sidle.Actions` has a `data-armed` when letting go would commit.
+`Tuckaway.Row` has a `data-phase`, and `Tuckaway.Actions` has a `data-armed` when letting go would commit.
 
 ```tsx
-<Sidle.Row className="data-[phase=dragging]:shadow-lg">
-	<Sidle.Actions side="end" className="group">
-		<Sidle.Action className="bg-neutral-400 group-data-armed:bg-red-500" />
-	</Sidle.Actions>
-</Sidle.Row>
+<Tuckaway.Row className="data-[phase=dragging]:shadow-lg">
+	<Tuckaway.Actions side="end" className="group">
+		<Tuckaway.Action className="bg-neutral-400 group-data-armed:bg-red-500" />
+	</Tuckaway.Actions>
+</Tuckaway.Row>
 ```
 
 ## Good to know
 
-- Give `Sidle.Content` a background of its own, or the page shows through as it moves.
-- Don't set `transform` on `Sidle.Content` or `width` on `Sidle.Actions`. Both change every frame.
+- Give `Tuckaway.Content` a background of its own, or the page shows through as it moves.
+- Don't set `transform` on `Tuckaway.Content` or `width` on `Tuckaway.Actions`. Both change every frame.
 - Set a panel's size with the `width` prop instead.

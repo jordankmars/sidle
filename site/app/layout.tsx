@@ -15,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-	title: { default: "Sidle", template: "%s · Sidle" },
+	title: { default: "Tuckaway", template: "%s · Tuckaway" },
 	description: "iOS Mail-style swipe actions for list rows.",
 };
 
