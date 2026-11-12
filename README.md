@@ -112,10 +112,15 @@ set `width` on `Actions` or `transform` on `Content`, since those move every fra
 
 ## Development
 
+Needs Node 20+ and pnpm.
+
 ```sh
 pnpm install
 pnpm test        # unit tests for the core and the React adapter
 pnpm playground  # Vite dev server with an inbox demo
+pnpm site:dev    # the docs site, in site/
+pnpm lint        # Biome
+pnpm typecheck
 ```
 
 The core lives in `src/core` and never touches the DOM. You feed it pointer
