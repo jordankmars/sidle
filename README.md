@@ -1,6 +1,6 @@
 # tuckaway
 
-[![CI](https://github.com/jordankmars/sidle/actions/workflows/ci.yml/badge.svg)](https://github.com/jordankmars/sidle/actions/workflows/ci.yml)
+[![CI](https://github.com/jordankmars/tuckaway/actions/workflows/ci.yml/badge.svg)](https://github.com/jordankmars/tuckaway/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 > iOS Mail-style swipe actions for list rows.
