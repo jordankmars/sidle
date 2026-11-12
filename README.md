@@ -5,6 +5,8 @@
 
 > iOS Mail-style swipe actions for list rows.
 
+![Swiping rows to flag, archive and delete them](./.github/demo.gif)
+
 Swipe partway to reveal a row's actions, or all the way to commit the main one.
 A vertical drag still scrolls the page, a quick flick opens a row even over a short
 distance, and only one row is open at a time.
