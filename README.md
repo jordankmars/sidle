@@ -131,7 +131,9 @@ adapter in `src/react` connects it to the page, and the playground in
 
 ## Contributing
 
-Contributions are welcome. Please open an issue to discuss changes before submitting a pull request.
+Bug reports and pull requests are welcome. For anything bigger than a small fix,
+open an issue first so the approach can be agreed on. CI runs lint, typecheck,
+the tests and both builds, so running those locally first saves a round trip.
 
 ## License
 
