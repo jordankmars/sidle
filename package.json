@@ -1,6 +1,6 @@
 {
 	"name": "tuckaway",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "iOS Mail-style swipe actions for list rows",
 	"keywords": [
 		"react",
